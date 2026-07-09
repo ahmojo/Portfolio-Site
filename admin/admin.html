@@ -1,0 +1,785 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<meta name="robots" content="noindex" />
+<title>Admin · Portfolio</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500&family=Geist:wght@300;400;500;600&display=swap" rel="stylesheet" />
+<style>
+:root{
+  --bg:#0f1220; --bg-1:#1a1e30; --bg-2:#232840;
+  --line:#2f395a; --line-2:#47547a;
+  --ink:#e6edf8; --ink-dim:#9aaac8; --ink-mute:#6878a4; --ink-faint:#3e4e70;
+  --acc:#6de6a2; --acc-dim:#43c47c; --blue:#7db2ee; --red:#e88080; --amber:#d4a66a;
+  --mono:'JetBrains Mono',ui-monospace,Menlo,monospace;
+  --sans:'Geist',ui-sans-serif,system-ui,-apple-system,sans-serif;
+}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+body{background:var(--bg);color:var(--ink);font-family:var(--sans);font-size:14px;
+  line-height:1.55;min-height:100vh;-webkit-font-smoothing:antialiased}
+a{color:var(--acc);text-decoration:none}
+
+/* ── LOGIN ── */
+.login-wrap{min-height:100vh;display:flex;align-items:center;justify-content:center;padding:24px}
+.login-card{width:100%;max-width:360px;background:var(--bg-1);border:1px solid var(--line);
+  border-radius:10px;padding:32px}
+.login-card h1{font-size:18px;font-weight:500;margin-bottom:6px;display:flex;align-items:center;gap:10px}
+.login-card h1 .dot{width:8px;height:8px;border-radius:50%;background:var(--acc);box-shadow:0 0 10px var(--acc)}
+.login-card .sub{font-family:var(--mono);font-size:11px;color:var(--ink-mute);margin-bottom:24px}
+.login-card label{display:block;font-family:var(--mono);font-size:11px;color:var(--ink-mute);
+  text-transform:uppercase;letter-spacing:1px;margin-bottom:8px}
+.login-card input{width:100%;font-family:var(--mono);font-size:13px;color:var(--ink);
+  background:var(--bg);border:1px solid var(--line-2);border-radius:6px;padding:11px 13px;outline:none;
+  transition:border-color .2s,box-shadow .2s}
+.login-card input:focus{border-color:var(--acc);box-shadow:0 0 0 3px rgba(109,230,162,.12)}
+.login-card button{width:100%;margin-top:18px;font-family:var(--mono);font-weight:500;font-size:13px;
+  color:var(--acc);background:linear-gradient(180deg,rgba(109,230,162,.16),rgba(109,230,162,.06));
+  border:1px solid rgba(109,230,162,.4);border-radius:6px;padding:11px;cursor:pointer;
+  transition:transform .2s,box-shadow .2s}
+.login-card button:hover{transform:translateY(-1px);box-shadow:0 8px 22px -10px rgba(109,230,162,.5)}
+.login-err{color:var(--red);font-family:var(--mono);font-size:11.5px;margin-top:14px;min-height:16px}
+
+/* ── APP SHELL ── */
+.app{display:none;min-height:100vh;flex-direction:column}
+.app.show{display:flex}
+.topbar{position:sticky;top:0;z-index:20;background:rgba(15,18,32,.9);backdrop-filter:blur(12px);
+  border-bottom:1px solid var(--line);padding:14px 24px;display:flex;align-items:center;
+  justify-content:space-between;gap:16px;flex-wrap:wrap}
+.topbar .brand{font-size:15px;font-weight:600;display:flex;align-items:center;gap:9px}
+.topbar .brand .dot{width:7px;height:7px;border-radius:50%;background:var(--acc);box-shadow:0 0 8px var(--acc)}
+.topbar .actions{display:flex;gap:10px;align-items:center}
+.btn{font-family:var(--mono);font-size:12px;padding:8px 14px;border-radius:5px;cursor:pointer;
+  border:1px solid var(--line-2);background:var(--bg-1);color:var(--ink-dim);
+  transition:all .2s;text-decoration:none;display:inline-flex;align-items:center;gap:6px}
+.btn:hover{color:var(--ink);border-color:var(--ink-mute)}
+.btn-primary{color:var(--acc);border-color:rgba(109,230,162,.4);
+  background:linear-gradient(180deg,rgba(109,230,162,.16),rgba(109,230,162,.06))}
+.btn-primary:hover{transform:translateY(-1px);box-shadow:0 6px 18px -8px rgba(109,230,162,.5);color:var(--acc)}
+.btn-danger{color:var(--red);border-color:rgba(232,128,128,.3)}
+.btn-danger:hover{color:var(--red);border-color:rgba(232,128,128,.5)}
+
+/* ── LAYOUT ── */
+.main{display:grid;grid-template-columns:200px 1fr;flex:1;min-height:0}
+.sidebar{border-right:1px solid var(--line);padding:18px 12px;display:flex;flex-direction:column;gap:4px}
+.tab-btn{font-family:var(--mono);font-size:12.5px;text-align:left;padding:10px 14px;border-radius:6px;
+  border:none;background:none;color:var(--ink-mute);cursor:pointer;transition:all .15s;
+  display:flex;align-items:center;gap:10px}
+.tab-btn:hover{color:var(--ink-dim);background:var(--bg-1)}
+.tab-btn.active{color:var(--acc);background:rgba(109,230,162,.08)}
+.tab-btn .n{font-size:10px;color:var(--ink-faint);width:18px}
+.tab-btn.active .n{color:var(--acc-dim)}
+.panel{padding:28px 32px;overflow-y:auto;max-width:760px}
+.panel-section{display:none}
+.panel-section.active{display:block;animation:fade .25s ease}
+@keyframes fade{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
+
+/* ── FORM CONTROLS ── */
+h2.field-title{font-size:16px;font-weight:500;margin-bottom:4px}
+.field-desc{font-family:var(--mono);font-size:11px;color:var(--ink-mute);margin-bottom:22px}
+.field{margin-bottom:20px}
+.field label{display:block;font-family:var(--mono);font-size:10.5px;color:var(--ink-mute);
+  text-transform:uppercase;letter-spacing:.8px;margin-bottom:7px}
+input[type=text],input[type=password],input[type=number],textarea,select{
+  width:100%;font-family:var(--mono);font-size:12.5px;color:var(--ink);
+  background:var(--bg);border:1px solid var(--line-2);border-radius:5px;padding:9px 11px;outline:none;
+  transition:border-color .2s,box-shadow .2s}
+input:focus,textarea:focus,select:focus{border-color:var(--acc);box-shadow:0 0 0 3px rgba(109,230,162,.1)}
+textarea{resize:vertical;min-height:60px;line-height:1.6}
+input[type=color]{width:44px;height:34px;border:1px solid var(--line-2);border-radius:5px;
+  background:var(--bg);cursor:pointer;padding:3px}
+.hint{font-family:var(--mono);font-size:10.5px;color:var(--ink-faint);margin-top:5px}
+.up-btn{position:absolute;right:5px;top:50%;transform:translateY(-50%);
+  font-family:var(--mono);font-size:10px;padding:4px 9px;border-radius:4px;cursor:pointer;
+  border:1px solid var(--line-2);background:var(--bg-2);color:var(--ink-mute);
+  transition:all .15s;z-index:2}
+.up-btn:hover:not(:disabled){color:var(--acc);border-color:var(--acc-dim)}
+.up-btn:disabled{opacity:.6;cursor:wait}
+
+/* ── LIST ITEMS (projects, learning, skills) ── */
+.item{background:var(--bg-1);border:1px solid var(--line);border-radius:8px;padding:16px;margin-bottom:14px}
+.item-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;gap:10px}
+.item-head .idx{font-family:var(--mono);font-size:11px;color:var(--ink-mute);
+  background:var(--bg);border:1px solid var(--line-2);border-radius:4px;padding:3px 8px}
+.item-head .item-controls{display:flex;gap:6px}
+.icon-btn{width:28px;height:28px;display:flex;align-items:center;justify-content:center;
+  border:1px solid var(--line-2);border-radius:4px;background:var(--bg);color:var(--ink-mute);
+  cursor:pointer;font-family:var(--mono);font-size:13px;transition:all .15s}
+.icon-btn:hover{color:var(--acc);border-color:var(--acc-dim)}
+.icon-btn.del:hover{color:var(--red);border-color:rgba(232,128,128,.4)}
+.field-row{display:grid;gap:12px;margin-bottom:12px}
+.field-row.r2{grid-template-columns:1fr 1fr}
+.field-row.r3{grid-template-columns:1fr 1fr 1fr}
+.field-row.r4{grid-template-columns:1fr 1fr 1fr 1fr}
+.field-row > .field{margin-bottom:0}
+
+/* phrases / list editors */
+.chiplist{display:flex;flex-wrap:wrap;gap:8px;align-items:center;padding:8px;
+  background:var(--bg);border:1px solid var(--line-2);border-radius:5px;min-height:44px}
+.chip{display:inline-flex;align-items:center;gap:8px;font-family:var(--mono);font-size:12px;
+  background:var(--bg-2);border:1px solid var(--line-2);border-radius:4px;padding:5px 8px 5px 11px;color:var(--ink-dim)}
+.chip .x{cursor:pointer;color:var(--ink-faint);font-size:14px;line-height:1}
+.chip .x:hover{color:var(--red)}
+.chip-add{background:none;border:1px dashed var(--line-2);border-radius:4px;color:var(--ink-mute);
+  font-family:var(--mono);font-size:11px;padding:5px 9px;cursor:pointer}
+.chip-add:hover{color:var(--acc);border-color:var(--acc-dim)}
+
+/* theme preview */
+.theme-preview{display:flex;gap:18px;align-items:center;background:var(--bg);border:1px solid var(--line);
+  border-radius:8px;padding:18px;margin-top:10px}
+.theme-swatch{width:60px;height:60px;border-radius:8px;border:1px solid var(--line-2)}
+.theme-meta{font-family:var(--mono);font-size:11px;color:var(--ink-mute)}
+.theme-meta b{color:var(--ink)}
+
+/* analytics */
+.an-stats{display:grid;grid-template-columns:repeat(4,1fr);gap:0;
+  border-top:1px solid var(--line);border-bottom:1px solid var(--line)}
+.an-stat{padding:14px 12px;border-right:1px solid var(--line)}
+.an-stat:last-child{border-right:none}
+.an-v{font-family:var(--sans);font-size:24px;font-weight:500;color:var(--ink);letter-spacing:-.02em;line-height:1}
+.an-l{font-family:var(--mono);font-size:9.5px;color:var(--ink-mute);text-transform:uppercase;letter-spacing:.7px;margin-top:6px}
+.an-chart-wrap{background:var(--bg);border:1px solid var(--line);border-radius:6px;padding:8px}
+.an-chart{width:100%;height:120px;display:block}
+.an-cols{display:grid;grid-template-columns:1fr 1fr;gap:20px;margin-top:8px}
+.an-list{display:flex;flex-direction:column;gap:2px}
+.an-row{display:flex;align-items:center;justify-content:space-between;gap:10px;
+  font-family:var(--mono);font-size:11.5px;padding:7px 9px;border-radius:4px;color:var(--ink-dim);
+  background:var(--bg);border:1px solid var(--line)}
+.an-row .k{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;min-width:0}
+.an-row .v{color:var(--acc);flex:0 0 auto;font-weight:500}
+.an-row .bar{position:absolute;left:0;top:0;bottom:0;background:rgba(109,230,162,.08);z-index:0}
+.an-row{position:relative;overflow:hidden}
+.an-row .k,.an-row .v{position:relative;z-index:1}
+.an-recent .an-row{color:var(--ink-mute)}
+.an-recent .an-row .t{color:var(--ink-faint);font-size:10px;flex:0 0 auto}
+@media(max-width:640px){
+  .an-stats{grid-template-columns:repeat(2,1fr)}
+  .an-stat:nth-child(2){border-right:none}
+  .an-stat:nth-child(1),.an-stat:nth-child(2){border-bottom:1px solid var(--line)}
+  .an-cols{grid-template-columns:1fr}
+}
+
+/* toast */
+#toast{position:fixed;left:50%;bottom:28px;transform:translateX(-50%) translateY(20px);z-index:100;
+  opacity:0;pointer-events:none;font-family:var(--mono);font-size:12px;color:var(--ink);
+  background:var(--bg-1);border:1px solid var(--line-2);border-radius:6px;padding:10px 16px;
+  box-shadow:0 20px 50px -16px rgba(0,0,0,.7);transition:opacity .3s,transform .3s}
+#toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+#toast.ok{border-color:rgba(109,230,162,.4);color:var(--acc)}
+#toast.err{border-color:rgba(232,128,128,.4);color:var(--red)}
+
+.loading{min-height:100vh;display:flex;align-items:center;justify-content:center;color:var(--ink-mute);
+  font-family:var(--mono);font-size:13px}
+.loading .spin{width:14px;height:14px;border:2px solid var(--line-2);border-top-color:var(--acc);
+  border-radius:50%;animation:spin .7s linear infinite;margin-right:10px}
+@keyframes spin{to{transform:rotate(360deg)}}
+
+@media(max-width:640px){
+  .main{grid-template-columns:1fr}
+  .sidebar{flex-direction:row;overflow-x:auto;border-right:none;border-bottom:1px solid var(--line);padding:10px}
+  .tab-btn{white-space:nowrap}
+  .panel{padding:20px}
+  .field-row.r2,.field-row.r3,.field-row.r4{grid-template-columns:1fr}
+}
+</style>
+</head>
+<body>
+
+<!-- LOGIN -->
+<div class="login-wrap" id="login-wrap">
+  <div class="login-card">
+    <h1><span class="dot"></span> Admin</h1>
+    <p class="sub">// portfolio control panel</p>
+    <form id="login-form">
+      <label for="pw">Password</label>
+      <input type="password" id="pw" autofocus autocomplete="current-password" />
+      <button type="submit">login ↗</button>
+      <div class="login-err" id="login-err"></div>
+    </form>
+  </div>
+</div>
+
+<!-- LOADING -->
+<div class="loading" id="loading" style="display:none"><span class="spin"></span> loading…</div>
+
+<!-- APP -->
+<div class="app" id="app">
+  <div class="topbar">
+    <div class="brand"><span class="dot"></span> Portfolio Admin</div>
+    <div class="actions">
+      <a class="btn" href="/" target="_blank">preview ↗</a>
+      <a class="btn" href="/api/backup" id="backup-btn" title="download the database (save before deploy/sleep)">backup .db</a>
+      <button class="btn btn-primary" id="save-btn">save changes</button>
+      <button class="btn btn-danger" id="logout-btn">logout</button>
+    </div>
+  </div>
+  <div class="main">
+    <div class="sidebar">
+      <button class="tab-btn active" data-tab="hero"><span class="n">01</span> Hero</button>
+      <button class="tab-btn" data-tab="about"><span class="n">02</span> About</button>
+      <button class="tab-btn" data-tab="skills"><span class="n">03</span> Skills</button>
+      <button class="tab-btn" data-tab="projects"><span class="n">04</span> Projects</button>
+      <button class="tab-btn" data-tab="learning"><span class="n">05</span> Learning</button>
+      <button class="tab-btn" data-tab="theme"><span class="n">06</span> Theme</button>
+      <button class="tab-btn" data-tab="analytics"><span class="n">07</span> Analytics</button>
+    </div>
+    <div class="panel">
+      <!-- HERO -->
+      <div class="panel-section active" data-section="hero">
+        <h2 class="field-title">Hero</h2>
+        <p class="field-desc">// the top of your landing page</p>
+        <div class="field">
+          <label>Name</label>
+          <input type="text" id="hero-name" />
+          <div class="hint">shown inside &lt; / &gt; in the big heading</div>
+        </div>
+        <div class="field">
+          <label>Tagline (HTML allowed)</label>
+          <textarea id="hero-lede" rows="3"></textarea>
+          <div class="hint">use &lt;strong&gt; for emphasis, &lt;span class="hl"&gt; for accent</div>
+        </div>
+        <div class="field">
+          <label>Typing phrases</label>
+          <div class="chiplist" id="phrases-list"></div>
+          <div class="hint">cycled in the hero — the rotating mono text</div>
+        </div>
+      </div>
+
+      <!-- ABOUT -->
+      <div class="panel-section" data-section="about">
+        <h2 class="field-title">About</h2>
+        <p class="field-desc">// who you are + the stat row</p>
+        <div class="field">
+          <label>Paragraphs (HTML allowed)</label>
+          <div id="about-paragraphs"></div>
+          <div class="hint">one textarea per paragraph; add/remove with the buttons</div>
+        </div>
+        <div class="field" style="margin-top:24px">
+          <label>Stats (4 shown on the site)</label>
+          <div id="stats-list"></div>
+        </div>
+        <div class="field" style="margin-top:18px">
+          <label>Currently building</label>
+          <div class="field-row r2">
+            <input type="text" id="now-status" placeholder="status (e.g. learning Docker)" />
+            <input type="text" id="now-detail" placeholder="detail" />
+          </div>
+        </div>
+      </div>
+
+      <!-- SKILLS -->
+      <div class="panel-section" data-section="skills">
+        <h2 class="field-title">Skills</h2>
+        <p class="field-desc">// rows shown in the tech stack section</p>
+        <div id="skills-list"></div>
+        <button class="btn" id="add-skill" style="margin-top:10px">+ add row</button>
+      </div>
+
+      <!-- PROJECTS -->
+      <div class="panel-section" data-section="projects">
+        <h2 class="field-title">Projects</h2>
+        <p class="field-desc">// order = display order. mark one as featured (gets media)</p>
+        <div id="projects-list"></div>
+        <button class="btn" id="add-project" style="margin-top:10px">+ add project</button>
+      </div>
+
+      <!-- LEARNING -->
+      <div class="panel-section" data-section="learning">
+        <h2 class="field-title">Learning</h2>
+        <p class="field-desc">// boot.dev courses &amp; projects. type 'url' opens a link, 'preview' opens a cert image</p>
+        <div id="learning-list"></div>
+        <button class="btn" id="add-learning" style="margin-top:10px">+ add item</button>
+      </div>
+
+      <!-- THEME -->
+      <div class="panel-section" data-section="theme">
+        <h2 class="field-title">Theme</h2>
+        <p class="field-desc">// live colors + particle density. apply with save.</p>
+        <div class="field-row r3">
+          <div class="field"><label>Background</label><input type="color" id="theme-bg" /></div>
+          <div class="field"><label>Accent</label><input type="color" id="theme-accent" /></div>
+          <div class="field"><label>Text</label><input type="color" id="theme-ink" /></div>
+        </div>
+        <div class="field">
+          <label>Particle count: <span id="particle-val" style="color:var(--acc)">72</span></label>
+          <input type="range" id="theme-particles" min="0" max="200" step="4" style="width:100%;accent-color:var(--acc)" />
+        </div>
+        <div class="theme-preview">
+          <div class="theme-swatch" id="theme-swatch"></div>
+          <div class="theme-meta">
+            bg <b id="m-bg"></b><br/>
+            accent <b id="m-acc"></b><br/>
+            ink <b id="m-ink"></b>
+          </div>
+        </div>
+      </div>
+
+      <!-- ANALYTICS -->
+      <div class="panel-section" data-section="analytics">
+        <h2 class="field-title">Analytics</h2>
+        <p class="field-desc">// visitor traffic, top pages &amp; referrers. read-only.</p>
+        <div class="field" style="margin-bottom:18px">
+          <label>Window: <select id="an-days" style="width:auto;display:inline-block">
+            <option value="7">last 7 days</option>
+            <option value="30" selected>last 30 days</option>
+            <option value="90">last 90 days</option>
+            <option value="365">all time</option>
+          </select></label>
+        </div>
+        <div class="an-stats">
+          <div class="an-stat"><div class="an-v" id="an-total">0</div><div class="an-l">total visits</div></div>
+          <div class="an-stat"><div class="an-v" id="an-unique">0</div><div class="an-l">unique visitors</div></div>
+          <div class="an-stat"><div class="an-v" id="an-avg">0</div><div class="an-l">avg / day</div></div>
+          <div class="an-stat"><div class="an-v" id="an-today">0</div><div class="an-l">today</div></div>
+        </div>
+        <div class="field" style="margin-top:22px">
+          <label>Visits over time</label>
+          <div class="an-chart-wrap"><svg id="an-chart" class="an-chart" viewBox="0 0 700 160" preserveAspectRatio="none"></svg></div>
+        </div>
+        <div class="an-cols">
+          <div class="field">
+            <label>Top pages</label>
+            <div id="an-paths" class="an-list"></div>
+          </div>
+          <div class="field">
+            <label>Top referrers</label>
+            <div id="an-refs" class="an-list"></div>
+          </div>
+        </div>
+        <div class="field" style="margin-top:20px">
+          <label>Recent visits</label>
+          <div id="an-recent" class="an-list an-recent"></div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+<div id="toast"></div>
+
+<script>
+/* ───────── state ───────── */
+let content = null;
+let dirty = false;
+
+/* ───────── helpers ───────── */
+function $(s,el=document){return el.querySelector(s)}
+function $$(s,el=document){return [...el.querySelectorAll(s)]}
+function esc(s){return String(s??'').replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]))}
+
+let toastT;
+function toast(msg,kind){
+  const t=$('#toast'); t.textContent=msg; t.className='show '+(kind||'');
+  clearTimeout(toastT); toastT=setTimeout(()=>{t.className=kind||''},2600);
+}
+
+async function api(path,opts){
+  const r=await fetch(path,{headers:{'Content-Type':'application/json'},...opts});
+  if(r.status===401){location.reload();throw new Error('unauthorized')}
+  if(!r.ok){let d=r.statusText;try{d=(await r.json()).detail||d}catch(_){}throw new Error(d)}
+  return r.json();
+}
+
+/* attach an upload button to a text input. on success, fills the input
+   with the returned /uploads/... URL and fires the input event. */
+function attachUpload(input, onChange){
+  if(input.__up) return; input.__up = true;
+  input.style.paddingRight = '78px';
+  const btn = document.createElement('button');
+  btn.type = 'button'; btn.className = 'up-btn';
+  btn.textContent = 'upload';
+  btn.onclick = () => {
+    const fileInput = document.createElement('input');
+    fileInput.type = 'file'; fileInput.accept = 'image/*';
+    fileInput.onchange = async () => {
+      const f = fileInput.files[0]; if(!f) return;
+      btn.disabled = true; btn.textContent = '…';
+      const fd = new FormData(); fd.append('file', f);
+      try{
+        const r = await fetch('/api/upload', {method:'POST', body:fd});
+        if(r.status===401){location.reload();return}
+        if(!r.ok){const e=await r.json().catch(()=>({}));throw new Error(e.detail||'upload failed')}
+        const d = await r.json();
+        input.value = d.url;
+        input.dispatchEvent(new Event('input'));
+        onChange && onChange(d.url);
+        toast('uploaded ✓','ok');
+      }catch(e){toast('upload failed: '+e.message,'err')}
+      finally{btn.disabled=false;btn.textContent='upload'}
+    };
+    fileInput.click();
+  };
+  // position the button inside the field's wrapper
+  input.parentElement.style.position = 'relative';
+  input.parentElement.appendChild(btn);
+}
+
+/* ───────── auth ───────── */
+async function boot(){
+  try{
+    const me=await api('/api/auth/me');
+    if(me.authenticated){showApp()}
+    else{showLogin()}
+  }catch(_){showLogin()}
+}
+function showLogin(){
+  $('#loading').style.display='none';
+  $('#app').classList.remove('show');
+  $('#login-wrap').style.display='flex';
+}
+async function showApp(){
+  $('#login-wrap').style.display='none';
+  $('#loading').style.display='flex';
+  try{
+    content=await api('/api/content');
+    renderAll();
+    $('#loading').style.display='none';
+    $('#app').classList.add('show');
+  }catch(e){
+    $('#loading').innerHTML='failed to load content: '+esc(e.message);
+  }
+}
+
+$('#login-form').addEventListener('submit',async e=>{
+  e.preventDefault();
+  const pw=$('#pw').value;
+  $('#login-err').textContent='';
+  try{
+    const r=await api('/api/auth/login',{method:'POST',body:JSON.stringify({password:pw})});
+    if(r.authenticated){showApp()}else{$('#login-err').textContent='wrong password'}
+  }catch(_){$('#login-err').textContent='login failed'}
+});
+
+$('#logout-btn').addEventListener('click',async()=>{
+  await api('/api/auth/logout',{method:'POST'});
+  location.reload();
+});
+
+/* ───────── tabs ───────── */
+$$('.tab-btn').forEach(b=>b.addEventListener('click',()=>{
+  $$('.tab-btn').forEach(x=>x.classList.remove('active'));
+  $$('.panel-section').forEach(x=>x.classList.remove('active'));
+  b.classList.add('active');
+  $('.panel-section[data-section="'+b.dataset.tab+'"]').classList.add('active');
+  // analytics loads on demand (fresh data each time you open the tab)
+  if(b.dataset.tab==='analytics') loadAnalytics();
+}));
+
+/* ───────── generic list editor helpers ───────── */
+function moveItem(arr,i,dir){
+  const j=i+dir;
+  if(j<0||j>=arr.length)return;
+  [arr[i],arr[j]]=[arr[j],arr[i]];
+}
+function itemControls(i,arr,onChange){
+  return `<div class="item-controls">
+    <button class="icon-btn" data-up title="move up">↑</button>
+    <button class="icon-btn" data-down title="move down">↓</button>
+    <button class="icon-btn del" data-del title="delete">×</button>
+  </div>`;
+}
+function bindItemControls(el,arr,onChange){
+  el.querySelector('[data-up]')?.addEventListener('click',()=>{const i=+el.dataset.i;if(i>0){moveItem(arr,i,-1);onChange()}});
+  el.querySelector('[data-down]')?.addEventListener('click',()=>{const i=+el.dataset.i;if(i<arr.length-1){moveItem(arr,i,1);onChange()}});
+  el.querySelector('[data-del]')?.addEventListener('click',()=>{arr.splice(+el.dataset.i,1);onChange()});
+}
+
+/* ───────── HERO ───────── */
+function renderHero(){
+  $('#hero-name').value=content.hero.name||'';
+  $('#hero-lede').value=content.hero.lede||'';
+  renderPhrases();
+}
+function renderPhrases(){
+  const wrap=$('#phrases-list');
+  wrap.innerHTML='';
+  content.hero.phrases.forEach((p,i)=>{
+    const c=document.createElement('span');c.className='chip';
+    c.innerHTML=esc(p)+'<span class="x" title="remove">×</span>';
+    c.querySelector('.x').addEventListener('click',()=>{content.hero.phrases.splice(i,1);renderPhrases()});
+    wrap.appendChild(c);
+  });
+  const add=document.createElement('button');add.className='chip-add';add.textContent='+ phrase';
+  add.addEventListener('click',()=>{
+    const v=prompt('new phrase:');if(v&&v.trim()){content.hero.phrases.push(v.trim());renderPhrases()}
+  });
+  wrap.appendChild(add);
+}
+['hero-name','hero-lede'].forEach(id=>$('#'+id).addEventListener('input',()=>{
+  content.hero.name=$('#hero-name').value;
+  content.hero.lede=$('#hero-lede').value;dirty=true;
+}));
+
+/* ───────── ABOUT ───────── */
+function renderAbout(){
+  const wrap=$('#about-paragraphs');wrap.innerHTML='';
+  content.about.paragraphs.forEach((p,i)=>{
+    const f=document.createElement('div');f.className='item';f.style.padding='12px';
+    f.innerHTML=`<div class="item-head"><span class="idx">p${i+1}</span>${itemControls(i,content.about.paragraphs,renderAbout)}</div>
+      <textarea rows="3"></textarea>`;
+    f.querySelector('textarea').value=p;
+    f.querySelector('textarea').addEventListener('input',e=>{content.about.paragraphs[i]=e.target.value;dirty=true});
+    bindItemControls(f,content.about.paragraphs,renderAbout);
+    wrap.appendChild(f);
+  });
+  const add=document.createElement('button');add.className='btn';add.textContent='+ paragraph';
+  add.addEventListener('click',()=>{content.about.paragraphs.push('');renderAbout()});
+  wrap.appendChild(add);
+
+  // stats
+  const sl=$('#stats-list');sl.innerHTML='';
+  content.stats.forEach((s,i)=>{
+    const dec=s.decorator==='dot'?'dot':'';
+    const f=document.createElement('div');f.className='item';f.dataset.i=i;
+    f.innerHTML=`<div class="item-head"><span class="idx">stat ${i+1}</span>${itemControls(i,content.stats,renderAbout)}</div>
+      <div class="field-row r4">
+        <div class="field"><label>value</label><input type="text" data-k="value"></div>
+        <div class="field"><label>suffix</label><input type="text" data-k="suffix" placeholder="nd, +…"></div>
+        <div class="field"><label>decorator</label><select data-k="decorator"><option value="">none</option><option value="dot">dot</option></select></div>
+        <div class="field"><label>label</label><input type="text" data-k="label"></div>
+      </div>`;
+    ['value','suffix','decorator','label'].forEach(k=>{
+      const el=f.querySelector(`[data-k="${k}"]`);el.value=s[k]||'';
+      el.addEventListener('input/change',()=>{content.stats[i][k]=el.value;dirty=true});
+      el.addEventListener('change',()=>{content.stats[i][k]=el.value;dirty=true});
+    });
+    bindItemControls(f,content.stats,renderAbout);
+    sl.appendChild(f);
+  });
+  const addS=document.createElement('button');addS.className='btn';addS.textContent='+ stat';
+  addS.addEventListener('click',()=>{content.stats.push({value:'0',label:''});renderAbout()});
+  sl.appendChild(addS);
+
+  $('#now-status').value=content.now.status||'';
+  $('#now-detail').value=content.now.detail||'';
+}
+['now-status','now-detail'].forEach(id=>$('#'+id).addEventListener('input',()=>{
+  content.now.status=$('#now-status').value;
+  content.now.detail=$('#now-detail').value;dirty=true;
+}));
+
+/* ───────── SKILLS ───────── */
+function renderSkills(){
+  const wrap=$('#skills-list');wrap.innerHTML='';
+  content.skills.forEach((s,i)=>{
+    const f=document.createElement('div');f.className='item';f.dataset.i=i;
+    f.innerHTML=`<div class="item-head"><span class="idx">${esc(s.key)||('row '+(i+1))}</span>${itemControls(i,content.skills,renderSkills)}</div>
+      <div class="field"><label>Key</label><input type="text" data-k="key" placeholder="languages / tools / interests"></div>
+      <div class="field"><label>Items (comma separated)</label><input type="text" data-k="items"></div>`;
+    const keyEl=f.querySelector('[data-k="key"]');keyEl.value=s.key;
+    keyEl.addEventListener('input',()=>{content.skills[i].key=keyEl.value;dirty=true;f.querySelector('.idx').textContent=keyEl.value});
+    const itemsEl=f.querySelector('[data-k="items"]');itemsEl.value=(s.items||[]).join(', ');
+    itemsEl.addEventListener('input',()=>{content.skills[i].items=itemsEl.value.split(',').map(x=>x.trim()).filter(Boolean);dirty=true});
+    bindItemControls(f,content.skills,renderSkills);
+    wrap.appendChild(f);
+  });
+}
+$('#add-skill').addEventListener('click',()=>{content.skills.push({key:'',items:[]});renderSkills()});
+
+/* ───────── PROJECTS ───────── */
+const VARIANTS=[['py','py (blue)'],['hack','hack (red)'],['cv','cv (green)'],['ml','ml (muted)'],['','none']];
+function renderProjects(){
+  const wrap=$('#projects-list');wrap.innerHTML='';
+  content.projects.forEach((p,i)=>{
+    const f=document.createElement('div');f.className='item';f.dataset.i=i;
+    const feat=p.featured?'<span style="color:var(--acc);font-family:var(--mono);font-size:10px">★ featured</span>':'';
+    f.innerHTML=`<div class="item-head"><span class="idx">proj ${i+1}</span>${feat}${itemControls(i,content.projects,renderProjects)}</div>
+      <div class="field"><label>Title</label><input type="text" data-k="title"></div>
+      <div class="field"><label>Description (HTML allowed)</label><textarea rows="2" data-k="desc"></textarea></div>
+      <div class="field-row r2">
+        <div class="field"><label>Stack</label><input type="text" data-k="stack"></div>
+        <div class="field"><label>GitHub repo (user/name)</label><input type="text" data-k="repo"></div>
+      </div>
+      <div class="field-row r3">
+        <div class="field"><label>Featured</label><select data-k="featured"><option value="false">no</option><option value="true">yes</option></select></div>
+        <div class="field"><label>Media (featured)</label><input type="text" data-k="media" placeholder="vids/video.mp4"></div>
+        <div class="field"><label>Badge label</label><input type="text" data-k="badge0label" placeholder="Go · CLI"></div>
+      </div>
+      <div class="field"><label>Badge variant</label><select data-k="badge0variant">${VARIANTS.map(v=>`<option value="${v[0]}">${v[1]}</option>`).join('')}</select></div>
+      <div class="field"><label>Slug <span style="color:var(--ink-faint)">(for /p/slug deep-dive page)</span></label><input type="text" data-k="slug" placeholder="my-project"></div>
+      <div class="field">
+        <label>Deep-dive writeup <span style="color:var(--ink-faint)">(markdown — empty = no read-more link)</span></label>
+        <textarea rows="6" data-k="content" placeholder="## The problem&#10;..."></textarea>
+      </div>`;
+    f.querySelector('[data-k="title"]').value=p.title;
+    f.querySelector('[data-k="desc"]').value=p.desc;
+    f.querySelector('[data-k="stack"]').value=p.stack;
+    f.querySelector('[data-k="repo"]').value=p.repo;
+    f.querySelector('[data-k="featured"]').value=String(p.featured);
+    f.querySelector('[data-k="media"]').value=p.media||'';
+    const b0=p.badges[0]||{label:'',variant:'py'};
+    f.querySelector('[data-k="badge0label"]').value=b0.label||'';
+    f.querySelector('[data-k="badge0variant"]').value=b0.variant||'';
+    f.querySelector('[data-k="slug"]').value=p.slug||'';
+    f.querySelector('[data-k="content"]').value=p.content||'';
+
+    f.querySelector('[data-k="title"]').addEventListener('input',e=>{content.projects[i].title=e.target.value;dirty=true});
+    f.querySelector('[data-k="desc"]').addEventListener('input',e=>{content.projects[i].desc=e.target.value;dirty=true});
+    f.querySelector('[data-k="stack"]').addEventListener('input',e=>{content.projects[i].stack=e.target.value;dirty=true});
+    f.querySelector('[data-k="repo"]').addEventListener('input',e=>{content.projects[i].repo=e.target.value;dirty=true});
+    f.querySelector('[data-k="featured"]').addEventListener('change',e=>{content.projects[i].featured=e.target.value==='true';renderProjects();dirty=true});
+    f.querySelector('[data-k="media"]').addEventListener('input',e=>{content.projects[i].media=e.target.value;dirty=true});
+    attachUpload(f.querySelector('[data-k="media"]'));
+    f.querySelector('[data-k="badge0label"]').addEventListener('input',e=>{content.projects[i].badges[0]={label:e.target.value,variant:f.querySelector('[data-k="badge0variant"]').value};dirty=true});
+    f.querySelector('[data-k="badge0variant"]').addEventListener('change',e=>{content.projects[i].badges[0]={label:f.querySelector('[data-k="badge0label"]').value,variant:e.target.value};dirty=true});
+    f.querySelector('[data-k="slug"]').addEventListener('input',e=>{content.projects[i].slug=e.target.value;dirty=true});
+    f.querySelector('[data-k="content"]').addEventListener('input',e=>{content.projects[i].content=e.target.value;dirty=true});
+
+    bindItemControls(f,content.projects,renderProjects);
+    wrap.appendChild(f);
+  });
+}
+$('#add-project').addEventListener('click',()=>{content.projects.push({title:'New Project',desc:'',stack:'',repo:'',featured:false,badges:[]});renderProjects()});
+
+/* ───────── LEARNING ───────── */
+function renderLearning(){
+  const wrap=$('#learning-list');wrap.innerHTML='';
+  content.learning.forEach((l,i)=>{
+    const f=document.createElement('div');f.className='item';f.dataset.i=i;
+    const extra = l.type==='url'
+      ? `<div class="field"><label>URL</label><input type="text" data-k="url" placeholder="https://github.com/..."></div>`
+      : `<div class="field-row r2"><div class="field"><label>Image src</label><input type="text" data-k="src" placeholder="new_image/x.png"></div>
+           <div class="field"><label>Modal title</label><input type="text" data-k="title"></div></div>`;
+    f.innerHTML=`<div class="item-head"><span class="idx">${i+1}</span>${itemControls(i,content.learning,renderLearning)}</div>
+      <div class="field-row r3">
+        <div class="field"><label>Kind</label><select data-k="kind"><option value="Course">Course</option><option value="Project">Project</option></select></div>
+        <div class="field"><label>Date</label><input type="text" data-k="date" placeholder="Apr 2026"></div>
+        <div class="field"><label>Type</label><select data-k="type"><option value="url">url (link)</option><option value="preview">preview (cert)</option></select></div>
+      </div>
+      <div class="field"><label>Name</label><input type="text" data-k="name"></div>
+      <div class="extra">${extra}</div>`;
+    f.querySelector('[data-k="kind"]').value=l.kind;
+    f.querySelector('[data-k="date"]').value=l.date;
+    f.querySelector('[data-k="type"]').value=l.type;
+    f.querySelector('[data-k="name"]').value=l.name;
+    if(l.type==='url')f.querySelector('[data-k="url"]').value=l.url||'';
+    else{f.querySelector('[data-k="src"]').value=l.src||'';f.querySelector('[data-k="title"]').value=l.title||''}
+
+    f.querySelector('[data-k="kind"]').addEventListener('change',e=>{content.learning[i].kind=e.target.value;dirty=true});
+    f.querySelector('[data-k="date"]').addEventListener('input',e=>{content.learning[i].date=e.target.value;dirty=true});
+    f.querySelector('[data-k="type"]').addEventListener('change',e=>{content.learning[i].type=e.target.value;renderLearning();dirty=true});
+    f.querySelector('[data-k="name"]').addEventListener('input',e=>{content.learning[i].name=e.target.value;dirty=true});
+    if(l.type==='url')f.querySelector('[data-k="url"]').addEventListener('input',e=>{content.learning[i].url=e.target.value;dirty=true});
+    else{
+      f.querySelector('[data-k="src"]').addEventListener('input',e=>{content.learning[i].src=e.target.value;dirty=true});
+      f.querySelector('[data-k="title"]').addEventListener('input',e=>{content.learning[i].title=e.target.value;dirty=true});
+      attachUpload(f.querySelector('[data-k="src"]'));
+    }
+    bindItemControls(f,content.learning,renderLearning);
+    wrap.appendChild(f);
+  });
+}
+$('#add-learning').addEventListener('click',()=>{content.learning.push({kind:'Course',name:'New item',date:'',type:'preview',src:'new_image/bootdev_certificate.png',title:'Certificate'});renderLearning()});
+
+/* ───────── THEME ───────── */
+function renderTheme(){
+  $('#theme-bg').value=content.theme.bg;
+  $('#theme-accent').value=content.theme.accent;
+  $('#theme-ink').value=content.theme.ink;
+  $('#theme-particles').value=content.theme.particles;
+  $('#particle-val').textContent=content.theme.particles;
+  updateSwatch();
+}
+function updateSwatch(){
+  const bg=content.theme.bg,acc=content.theme.accent,ink=content.theme.ink;
+  $('#theme-swatch').style.background=`linear-gradient(135deg,${bg},${acc})`;
+  $('#m-bg').textContent=bg;$('#m-acc').textContent=acc;$('#m-ink').textContent=ink;
+}
+['theme-bg','theme-accent','theme-ink'].forEach(id=>$('#'+id).addEventListener('input',()=>{
+  content.theme[id.replace('theme-','')]=$('#'+id).value;dirty=true;updateSwatch();
+}));
+$('#theme-particles').addEventListener('input',e=>{content.theme.particles=+e.target.value;$('#particle-val').textContent=e.target.value;dirty=true});
+
+/* ───────── render all + save ───────── */
+/* ───────── analytics ───────── */
+async function loadAnalytics(){
+  const days = +$('#an-days').value;
+  try{
+    const d = await api('/api/analytics?days='+days);
+    const perDay = d.per_day||[];
+    $('#an-total').textContent = d.total_visits;
+    $('#an-unique').textContent = d.unique_visitors;
+    const avg = perDay.length ? Math.round(d.total_visits / Math.max(perDay.length,1)) : 0;
+    $('#an-avg').textContent = avg;
+    const today = new Date().toISOString().slice(0,10);
+    const todayRow = perDay.find(r=>r.date===today);
+    $('#an-today').textContent = todayRow ? todayRow.visits : 0;
+
+    // chart — filled area path over the per-day series
+    drawChart(perDay);
+
+    // top pages + referrers with bars
+    const maxP = Math.max(1, ...((d.top_paths||[]).map(x=>x.visits)));
+    $('#an-paths').innerHTML = (d.top_paths||[]).map(r=>
+      `<div class="an-row"><span class="bar" style="width:${(r.visits/maxP*100)|0}%"></span>
+        <span class="k">${esc(r.path)}</span><span class="v">${r.visits}</span></div>`).join('')
+      || '<div class="an-row"><span class="k" style="color:var(--ink-mute)">no data</span></div>';
+    const maxR = Math.max(1, ...((d.top_referrers||[]).map(x=>x.visits)));
+    $('#an-refs').innerHTML = (d.top_referrers||[]).map(r=>{
+        const host = r.referrer.replace(/^https?:\/\//,'').split('/')[0];
+        return `<div class="an-row"><span class="bar" style="width:${(r.visits/maxR*100)|0}%"></span>
+          <span class="k">${esc(host)}</span><span class="v">${r.visits}</span></div>`;
+      }).join('') || '<div class="an-row"><span class="k" style="color:var(--ink-mute)">no referrers yet</span></div>';
+
+    // recent
+    $('#an-recent').innerHTML = (d.recent||[]).map(r=>
+      `<div class="an-row"><span class="k">${esc(r.path)}</span>
+        <span class="t">${esc((r.at||'').slice(5,16))}</span></div>`).join('')
+      || '<div class="an-row"><span class="k" style="color:var(--ink-mute)">no visits yet</span></div>';
+  }catch(e){
+    $('#an-paths').innerHTML = '<div class="an-row"><span class="k" style="color:var(--red)">failed: '+esc(e.message)+'</span></div>';
+  }
+}
+function drawChart(perDay){
+  const svg = $('#an-chart'); svg.innerHTML='';
+  const W=700,H=160,pad=6;
+  if(!perDay.length){
+    svg.innerHTML='<text x="350" y="85" text-anchor="middle" fill="#6878a4" font-family="JetBrains Mono" font-size="12">no data yet</text>';
+    return;
+  }
+  const max = Math.max(1, ...perDay.map(r=>r.visits));
+  const step = (W-pad*2)/Math.max(perDay.length-1,1);
+  const pts = perDay.map((r,i)=>[pad+i*step, H-pad-(r.visits/max)*(H-pad*2)]);
+  // area path
+  let area = `M ${pts[0][0]} ${H-pad} `;
+  pts.forEach(p=>area += `L ${p[0]} ${p[1]} `);
+  area += `L ${pts[pts.length-1][0]} ${H-pad} Z`;
+  // line path
+  let line = pts.map((p,i)=>(i?'L':'M')+` ${p[0]} ${p[1]}`).join(' ');
+  svg.innerHTML = `
+    <defs><linearGradient id="ag" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#6de6a2" stop-opacity=".35"/>
+      <stop offset="100%" stop-color="#6de6a2" stop-opacity="0"/>
+    </linearGradient></defs>
+    <path d="${area}" fill="url(#ag)"/>
+    <path d="${line}" fill="none" stroke="#6de6a2" stroke-width="1.5" stroke-linejoin="round"/>
+    ${pts.map(p=>`<circle cx="${p[0]}" cy="${p[1]}" r="2" fill="#6de6a2"/>`).join('')}
+  `;
+}
+$('#an-days').addEventListener('change',loadAnalytics);
+
+function renderAll(){renderHero();renderAbout();renderSkills();renderProjects();renderLearning();renderTheme()}
+
+$('#save-btn').addEventListener('click',async()=>{
+  const btn=$('#save-btn');btn.disabled=true;btn.textContent='saving…';
+  try{
+    // clean: drop empty badges, ensure arrays
+    const out=JSON.parse(JSON.stringify(content));
+    out.projects.forEach(p=>{p.badges=(p.badges||[]).filter(b=>b.label&&b.label.trim())});
+    content=out;
+    const saved=await api('/api/content',{method:'PUT',body:JSON.stringify(content)});
+    content=saved;dirty=false;
+    toast('saved ✓ changes are live','ok');
+  }catch(e){toast('save failed: '+e.message,'err')}
+  finally{btn.disabled=false;btn.textContent='save changes'}
+});
+
+window.addEventListener('beforeunload',e=>{if(dirty){e.preventDefault();e.returnValue=''}});
+
+boot();
+</script>
+</body>
+</html>

@@ -1,0 +1,35 @@
+# local secrets and runtime state
+.env
+backend/.env
+backend/data/
+backend/uploads/
+uploads/
+*.db
+*.sqlite
+*.sqlite3
+*.db-shm
+*.db-wal
+.session_secret
+
+# media is kept local/private by default; keep only placeholder dirs in git
+vids/*
+!vids/.gitkeep
+new_image/*
+!new_image/.gitkeep
+
+# local operational notes/scripts
+AGENT_EXECUTION_SPEC.md
+DEPLOY.md
+SECURITY_AUDIT.md
+scripts/setup-vm.sh
+backend/real_cert.png
+
+# Python/build noise
+__pycache__/
+*.pyc
+.venv/
+venv/
+
+# OS/editor noise
+.DS_Store
+Thumbs.db

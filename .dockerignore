@@ -1,0 +1,24 @@
+.git
+.gitignore
+.dockerignore
+
+# Never copy local secrets or mutable state into image layers.
+.env
+backend/.env
+backend/data/
+backend/uploads/
+uploads/
+*.db
+*.sqlite
+*.sqlite3
+*.db-shm
+*.db-wal
+.session_secret
+
+# Local/dev noise.
+__pycache__/
+*.pyc
+.venv/
+venv/
+.DS_Store
+Thumbs.db

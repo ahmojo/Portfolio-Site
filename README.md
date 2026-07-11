@@ -7,7 +7,7 @@ The project contains:
 - a static HTML/CSS/JavaScript frontend;
 - a FastAPI backend with SQLite persistence;
 - an admin panel for editing site content;
-- Docker Compose and Render deployment configuration.
+- Docker Compose 
 
 Placeholder folders are kept for media paths so Docker builds still have the
 expected directory structure.

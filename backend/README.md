@@ -15,12 +15,11 @@ FastAPI + SQLite backend for the portfolio site. Runs **locally**.
 | `/api/projects` | GET | live GitHub stars / language / last-update per repo (cached 10 min) |
 | `/api/stats` | GET | GitHub contributions, streaks + yearly heatmap |
 | `/api/uptime` | GET | public self-hosted status; optionally enriches from UptimeRobot server-side |
+| `/api/guestbook` | GET | recent messages |
+| `/api/guestbook` | POST | add a message `{author, message}` |
 | `/api/now` | GET | current "what I'm doing" status |
 | `/api/now` | PUT | update status `{status, detail, token?}` |
-| `/api/upload` | POST | admin-only image upload for editable project content |
-| `/api/analytics` | GET | admin-only, self-hosted visit summary |
-| `/api/backup` | GET | admin-only SQLite backup download |
-| `/api/restore` | POST | admin-only SQLite backup restore |
+| `/api/contact` | POST | store + optionally email a contact message `{name, email, message}` |
 | `/api/docs` | - | interactive Swagger UI |
 
 The app **also serves the static site** (index.html, vids/, new_image/) at `/`,
@@ -62,10 +61,13 @@ All settings via env vars (prefix `PORTFOLIO_`), see `.env.example`.
 
 - `PORTFOLIO_GITHUB_USER` / `PORTFOLIO_PROJECTS` - repos shown on the site
 - `PORTFOLIO_GITHUB_TOKEN` - optional PAT, raises rate limit 60→5000/h
+- `PORTFOLIO_GUESTBOOK_RATE` / `PORTFOLIO_CONTACT_RATE` - per-IP/min limits
 - `PORTFOLIO_NOW_TOKEN` - required in production; protects `PUT /api/now`
 - `PORTFOLIO_ADMIN_PASSWORD` - password for the `/admin` panel; production refuses `admin`
 - `PORTFOLIO_SESSION_SECRET` - cookie signing secret; production requires a real random value
 - `PORTFOLIO_SESSION_TTL_HOURS` - login session lifetime (default 12h)
+- `PORTFOLIO_SMTP_HOST` (+ USER/PASS/TO) - enables contact email forwarding
+
 - `PORTFOLIO_UPTIME_ROBOT_API_KEY` / `PORTFOLIO_UPTIME_ROBOT_MONITOR_ID` - optional UptimeRobot status badge; keep the key server-side
 - `PORTFOLIO_UPTIME_ROBOT_STATUS_PAGE_URL` - optional public status page link
 

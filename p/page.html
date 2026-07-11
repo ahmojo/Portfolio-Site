@@ -4,47 +4,51 @@
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 <title>Project · Portfolio</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500&family=Geist:wght@300;400;500;600&display=swap" rel="stylesheet" />
 <style>
 :root{
-  --bg:#edf2f4; --bg-1:#e1e8ec; --line:#c8d3da; --line-2:#9fb0bc;
-  --ink:#13222e; --ink-dim:#435562; --ink-mute:#687985; --ink-faint:#a7b5bd;
-  --acc:#1f5aff; --blue:#1f5aff; --red:#c2472f;
-  --mono:'SFMono-Regular',Consolas,'Liberation Mono',monospace;
-  --sans:Inter,ui-sans-serif,-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;
-  --display:'Bahnschrift','Arial Narrow',Arial,sans-serif;
+  --bg:#161a28; --bg-1:#232840; --line:#2f395a; --line-2:#47547a;
+  --ink:#e6edf8; --ink-dim:#9aaac8; --ink-mute:#6878a4; --ink-faint:#3e4e70;
+  --acc:#6de6a2; --blue:#7db2ee; --red:#e88080;
+  --mono:'JetBrains Mono',ui-monospace,Menlo,monospace;
+  --sans:'Geist',ui-sans-serif,system-ui,-apple-system,sans-serif;
 }
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
 body{
-  background:linear-gradient(90deg,transparent calc(50% - .5px),rgba(19,34,46,.05) 50%,transparent calc(50% + .5px)),var(--bg);
+  background:radial-gradient(120% 80% at 80% -10%,rgba(109,230,162,.05),transparent 60%),var(--bg);
   color:var(--ink);font-family:var(--sans);font-size:16px;line-height:1.7;
   min-height:100vh;-webkit-font-smoothing:antialiased;
 }
 a{color:var(--acc);text-decoration:none}
 a:hover{text-decoration:underline}
-.wrap{max-width:800px;margin:0 auto;padding:72px 32px 100px}
+.wrap{max-width:720px;margin:0 auto;padding:80px 32px 100px}
 .back{display:inline-flex;align-items:center;gap:7px;font-family:var(--mono);
   font-size:12px;color:var(--ink-mute);margin-bottom:40px;transition:color .2s}
 .back:hover{color:var(--acc);text-decoration:none}
 .badges{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:14px}
 .badge{font-family:var(--mono);font-size:10.5px;padding:3px 9px;border-radius:4px;
   color:var(--ink-mute);border:1px solid var(--line-2);background:rgba(255,255,255,.015)}
-.badge.cv{color:#146946;border-color:rgba(19,138,98,.35)}
-.badge.hack{color:#9f3523;border-color:rgba(194,71,47,.35)}
-.badge.py{color:#174bd8;border-color:rgba(31,90,255,.35)}
-h1{font-family:var(--display);font-size:clamp(38px,7vw,64px);font-weight:650;letter-spacing:-.045em;line-height:1;margin-bottom:18px}
+.badge.cv{color:#98d9b4;border-color:rgba(109,230,162,.25)}
+.badge.hack{color:#e7a2a2;border-color:rgba(232,128,128,.28)}
+.badge.py{color:#a7c7ec;border-color:rgba(125,178,238,.25)}
+h1{font-size:clamp(28px,5vw,40px);font-weight:600;letter-spacing:-.025em;line-height:1.1;margin-bottom:14px}
 .lede{font-size:17px;color:var(--ink-dim);max-width:62ch;margin-bottom:32px}
 .meta{font-family:var(--mono);font-size:12px;color:var(--ink-mute);margin-bottom:36px;
   display:flex;gap:18px;flex-wrap:wrap;align-items:center}
-.meta a.gh{display:inline-flex;align-items:center;gap:6px;color:#fff;
-  border:1px solid var(--acc);border-radius:8px;padding:8px 12px;background:var(--acc);transition:all .2s}
-.meta a.gh:hover{color:#fff;text-decoration:none;transform:translateY(-1px)}
+.meta a.gh{display:inline-flex;align-items:center;gap:6px;color:var(--ink);
+  border:1px solid rgba(125,178,238,.42);border-radius:5px;padding:7px 12px;
+  background:linear-gradient(180deg,rgba(125,178,238,.13),rgba(125,178,238,.055));transition:all .2s}
+.meta a.gh:hover{color:var(--acc);border-color:rgba(109,230,162,.55);text-decoration:none;
+  background:linear-gradient(180deg,rgba(109,230,162,.14),rgba(109,230,162,.06))}
 .media{border:1px solid var(--line);border-radius:6px;overflow:hidden;background:#000;
   aspect-ratio:16/9;margin:32px 0;max-height:340px}
 .media video,.media img{width:100%;height:100%;object-fit:cover;display:block}
 .divider{border:none;border-top:1px solid var(--line);margin:40px 0;opacity:.7}
 /* markdown body */
 .md{font-size:16px;line-height:1.75;color:var(--ink-dim)}
-.md h2{font-family:var(--display);font-size:25px;font-weight:650;color:var(--ink);
+.md h2{font-family:var(--sans);font-size:21px;font-weight:600;color:var(--ink);
   letter-spacing:-.015em;margin:36px 0 14px}
 .md h2:first-child{margin-top:0}
 .md h3{font-size:17px;font-weight:500;color:var(--ink);margin:28px 0 10px}
@@ -59,7 +63,7 @@ h1{font-family:var(--display);font-size:clamp(38px,7vw,64px);font-weight:650;let
 .md blockquote{border-left:2px solid var(--acc);padding:4px 0 4px 18px;margin:20px 0;
   color:var(--ink-mute);font-style:italic}
 .md strong{color:var(--ink);font-weight:600}
-.md a{color:var(--acc);border-bottom:1px solid rgba(31,90,255,.3)}
+.md a{color:var(--acc);border-bottom:1px solid rgba(109,230,162,.3)}
 .md a:hover{border-color:var(--acc)}
 /* states */
 .empty-content{border:1px dashed var(--line-2);border-radius:8px;padding:48px 32px;
@@ -76,15 +80,6 @@ h1{font-family:var(--display);font-size:clamp(38px,7vw,64px);font-weight:650;let
 
 <script>
 function esc(s){return String(s??'').replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]))}
-function safeRichText(value){
-  const template=document.createElement('template');template.innerHTML=String(value??'');
-  const allowed=new Set(['STRONG','B','EM','I','CODE','SPAN','BR']);
-  [...template.content.querySelectorAll('*')].forEach(node=>{
-    if(!allowed.has(node.tagName)){node.replaceWith(...node.childNodes);return}
-    [...node.attributes].forEach(attr=>node.removeAttribute(attr.name));
-  });
-  return template.innerHTML;
-}
 
 // minimal markdown -> HTML (headings, lists, code, bold, links, blockquote, hr)
 function mdToHtml(md){
@@ -94,12 +89,8 @@ function mdToHtml(md){
   const closeLists=()=>{if(inUl){html+='</ul>';inUl=false}if(inOl){html+='</ol>';inOl=false}};
   const inline=(s)=>esc(s)
     .replace(/\*\*(.+?)\*\*/g,'<strong>$1</strong>')
-    .replace(/\*([^*]+?)\*/g,'<em>$1</em>')
     .replace(/`([^`]+?)`/g,'<code>$1</code>')
-    .replace(/\[([^\]]+)\]\(([^)]+)\)/g,(_,label,url)=>{
-      const href=/^https?:\/\//i.test(url)?url:'#';
-      return '<a href="'+href+'" target="_blank" rel="noopener">'+label+'</a>';
-    });
+    .replace(/\[([^\]]+)\]\(([^)]+)\)/g,'<a href="$2" target="_blank" rel="noopener">$1</a>');
   for(const raw of lines){
     const line=raw;
     if(line.trim().startsWith('```')){ if(inCode){html+='<pre><code>'+esc(codeBuf.join('\n'))+'</code></pre>';inCode=false;codeBuf=[]}else{closeLists();inCode=true} continue }
@@ -134,12 +125,12 @@ function render(p){
   const gh = p.repo ? `<a class="gh" href="https://github.com/${esc(p.repo)}" target="_blank" rel="noopener">GitHub ↗</a>` : '';
   const body = p.content && p.content.trim()
     ? `<div class="md">${mdToHtml(p.content)}</div>`
-    : `<div class="empty-content">Für dieses Projekt gibt es noch keinen Detailtext.<br/><a href="https://github.com/${esc(p.repo||'')}" target="_blank" rel="noopener">Repository öffnen ↗</a></div>`;
+    : `<div class="empty-content">no writeup yet for this project.<br/>check the <a href="https://github.com/${esc(p.repo||'')}" target="_blank" rel="noopener">repo ↗</a></div>`;
   root.innerHTML = `
-    <a class="back" href="/">← zurück zum Portfolio</a>
+    <a class="back" href="/">← back to portfolio</a>
     <div class="badges">${badges}</div>
     <h1>${esc(p.title||'')}</h1>
-    <p class="lede">${safeRichText(p.desc)}</p>
+    <p class="lede">${p.desc||''}</p>
     <div class="meta">${p.stack?`<span>stack · ${esc(p.stack)}</span>`:''}${gh}</div>
     ${media}
     <hr class="divider" />
@@ -148,10 +139,10 @@ function render(p){
 
 function notFound(slug){
   document.getElementById('root').innerHTML = `
-    <a class="back" href="/">← zurück zum Portfolio</a>
+    <a class="back" href="/">← back to portfolio</a>
     <div class="not-found">
       <h1>404</h1>
-      <p style="color:var(--ink-mute);font-family:var(--mono);font-size:13px">Kein Projekt mit Slug <b style="color:var(--acc)">${esc(slug)}</b></p>
+      <p style="color:var(--ink-mute);font-family:var(--mono);font-size:13px">no project with slug <b style="color:var(--acc)">${esc(slug)}</b></p>
     </div>`;
 }
 

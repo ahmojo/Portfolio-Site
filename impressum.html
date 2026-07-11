@@ -4,18 +4,20 @@
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 <title>Impressum | Ahmet Ilhan</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500&family=Geist:wght@300;400;500;600&display=swap" rel="stylesheet" />
 <style>
 :root{
-  --bg:#edf2f4;
-  --line:#c8d3da;
-  --line-2:#9fb0bc;
-  --ink:#13222e;
-  --ink-dim:#435562;
-  --ink-mute:#687985;
-  --acc:#1f5aff;
-  --mono:'SFMono-Regular',Consolas,'Liberation Mono',monospace;
-  --sans:Inter,ui-sans-serif,-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;
-  --display:'Bahnschrift','Arial Narrow',Arial,sans-serif;
+  --bg:#1b1f2e;
+  --line:#36405e;
+  --line-2:#47547a;
+  --ink:#e6edf8;
+  --ink-dim:#9aaac8;
+  --ink-mute:#6878a4;
+  --acc:#6de6a2;
+  --mono:'JetBrains Mono', ui-monospace, Menlo, monospace;
+  --sans:'Geist', ui-sans-serif, system-ui, -apple-system, sans-serif;
 }
 *{box-sizing:border-box;margin:0;padding:0}
 body{
@@ -54,11 +56,9 @@ a:hover{color:var(--acc);border-color:var(--acc)}
 }
 .sec-num b{color:var(--acc);font-weight:500}
 h1{
-  font-family:var(--display);
-  font-size:clamp(40px,7vw,64px);
-  font-weight:650;
-  letter-spacing:-.045em;
-  line-height:1;
+  font-size:28px;
+  font-weight:500;
+  letter-spacing:-.015em;
   margin-bottom:28px;
 }
 .block{
@@ -91,11 +91,11 @@ footer{
 <body>
 <main class="wrap">
   <div class="top">
-    <a class="brand" href="/">Ahmet Ilhan · Portfolio</a>
-    <a class="back" href="/">← zurück zur Startseite</a>
+    <a class="brand" href="index.html">ahmet.ilhan</a>
+    <a class="back" href="index.html">zurück zur Startseite</a>
   </div>
 
-  <p class="sec-num"><b>Rechtliches</b> &nbsp; / Portfolio</p>
+  <p class="sec-num"><b>01</b> &nbsp; impressum</p>
   <h1>Impressum</h1>
 
   <section class="block">
@@ -133,7 +133,7 @@ footer{
     </p>
   </section>
 
-  <footer>Stand: Juli 2026</footer>
+  <footer>Stand: Mai 2026</footer>
 </main>
 </body>
 </html>

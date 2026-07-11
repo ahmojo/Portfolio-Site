@@ -48,25 +48,25 @@ CREATE INDEX IF NOT EXISTS idx_visits_path ON visits(path);
 """
 
 # Default site content, seeded into the `content` table on first boot.
-# This mirrors the public fallback in index.html and is used on the first boot.
+# This mirrors the current static index.html so nothing changes until edited.
 DEFAULT_CONTENT = {
     "hero": {
-        "name": "Ahmet Faruk Ilhan",
-        "lede": "<strong>IMS-Schüler mit Backend-Fokus</strong> aus dem Aargau. Ich entwickle APIs, CLI-Tools und datengetriebene Anwendungen – aktuell vor allem mit Python, Go und FastAPI.",
+        "name": "Ahmet",
+        "lede": "<strong>IMS-Schüler mit Backend-Fokus</strong> aus der Schweiz. Ich baue am liebsten Dinge, die einfach zuverlässig laufen - mit Python, C# und JavaScript.",
         "phrases": [
-            "APIs · CLI-Tools · Datenflüsse",
-            "Software verstehen, nicht nur zusammenbauen.",
+            "Backend · Python · C# · JavaScript",
+            "building things that should just run.",
         ],
     },
     "now": {
         "status": "learning FastAPI",
-        "detail": "building this portfolio backend",
+        "detail": "building this very backend",
     },
     "about": {
         "paragraphs": [
-            "Ich bin <strong>Ahmet</strong>, 17 Jahre alt und im 2. Jahr der Informatikmittelschule. Mich interessiert besonders der Teil einer Anwendung, den man nicht sofort sieht: Datenflüsse, Schnittstellen und zuverlässige Abläufe.",
-            "Meine Projekte entstehen in der Schule, an Hackathons und beim selbständigen Lernen. Dabei versuche ich, nicht nur etwas zum Laufen zu bringen, sondern Entscheidungen, Risiken und Grenzen zu verstehen.",
-            "Im <span class=\"hl\">Praktikum im 4. Jahr</span> möchte ich dieses Fundament in einem professionellen Team weiterentwickeln.",
+            "Ich bin <strong>Ahmet</strong>, 17 Jahre alt, aus dem Aargau. Seit der Bezirksschule interessiere ich mich für Informatik - deshalb die <span class=\"hl\">IMS</span>, aktuell im 2. Jahr.",
+            "Mein Schwerpunkt liegt auf <strong>Backend-Entwicklung</strong>. Daneben interessiert mich Cybersecurity - ich lerne, wie Systeme funktionieren und wie man sie sicherer macht.",
+            "Neben der Schule bilde ich mich selbständig weiter und lerne auch in meiner Freizeit gerne neue Informatik-Themen, zum Beispiel über Boot.dev. Im <span class=\"hl\">Praktikum im 4. Jahr</span> möchte ich dieses Wissen an echten Aufgaben anwenden und weiter ausbauen.",
         ],
     },
     "stats": [
@@ -76,10 +76,9 @@ DEFAULT_CONTENT = {
         {"value": "1", "decorator": "dot", "label": "Hackathon"},
     ],
     "skills": [
-        {"key": "Backend & Sprachen", "items": ["Python", "Go", "C#", "JavaScript", "FastAPI"]},
-        {"key": "Daten & Betrieb", "items": ["SQLite", "MSSQL", "Docker", "REST APIs", "Linux"]},
-        {"key": "Arbeitsweise", "items": ["Git", "Tests", "Dokumentation", "Debugging", "Security Basics"]},
-        {"key": "Aktuell vertieft", "items": ["Backend-Architektur", "Cybersecurity", "Computer Vision"]},
+        {"key": "languages", "items": ["Python", "C#", "JavaScript", "HTML/CSS"]},
+        {"key": "tools", "items": ["Docker", "Git", "PowerShell", "LiteDB", "MSSQL"]},
+        {"key": "interests", "items": ["Backend", "Databases", "Cybersecurity", "Computer Vision", "Machine Learning"]},
     ],
     "projects": [
         {
@@ -87,7 +86,7 @@ DEFAULT_CONTENT = {
             "desc": "Baden Hackt 2026 - ein System, das per <b style=\"color:var(--acc)\">YOLOv11n-cls</b> Produkte im Regal erkennt. Wird ein Produkt entnommen, löst es automatisch eine Bestellmail mit CSV-Anhang aus.",
             "stack": "Python · FastAPI · YOLOv11n-cls · OpenCV · uvicorn",
             "repo": "ahmojo/Badenhackt_KMU_Trifft_KI",
-            "featured": False,
+            "featured": True,
             "media": "vids/video.mp4",
             "badges": [
                 {"label": "Hackathon", "variant": "hack"},
@@ -113,7 +112,7 @@ DEFAULT_CONTENT = {
             "title": "Dieses Portfolio",
             "desc": "Kein Template - das Frontend spricht mit einem eigenen <b style=\"color:var(--acc)\">FastAPI</b>-Backend: Live-GitHub-Stats, Projekt-Metadaten, ein Admin-Panel zum Bearbeiten der Inhalte und Uptime-Monitoring. Selbst gehostet in Docker auf einer Oracle-VM hinter Cloudflare.",
             "stack": "Python · FastAPI · SQLite · Docker · Oracle Cloud · Cloudflare",
-            "repo": "ahmojo/Portfolio-Site",
+            "repo": "",
             "featured": False,
             "badges": [{"label": "Full-Stack", "variant": "py"}],
             "slug": "portfolio",
@@ -136,7 +135,7 @@ DEFAULT_CONTENT = {
             "desc": "Ein lokales CLI-Tool (<b style=\"color:var(--acc)\">cct</b>), das Codex- &amp; Claude-Code-Sessions zwischen Maschinen überträgt. Sessions als <code>.codexbundle</code> exportieren, kopieren, importieren - kein Cloud, kein Account, kein Server. Optionaler LAN-Sync.",
             "stack": "Go · Cobra · Indexed State · Local-Only",
             "repo": "ahmojo/codex-claude-transfer",
-            "featured": True,
+            "featured": False,
             "badges": [{"label": "Go · CLI", "variant": "py"}],
             "slug": "codex-claude-transfer",
             "content": (
@@ -152,7 +151,7 @@ DEFAULT_CONTENT = {
                 "## Features\n"
                 "- Funktioniert mit **Codex** *und* **Claude Code** (inkl. Cross-Agent-Übergabe)\n"
                 "- Inkrementeller Sync: nur Neues wird angehängt, nichts überschrieben\n"
-                "- Secret-Scan & Redaktion vor dem Export\n"
+                "- Secret-Scan &amp; Redaktion vor dem Export\n"
                 "- Optionale Verschlüsselung der Bundles\n"
                 "- Experimenteller LAN-Sync zwischen explizit gepairten Geräten\n\n"
                 "> In Go geschrieben, mit [Cobra](https://github.com/spf13/cobra)."
@@ -225,10 +224,10 @@ DEFAULT_CONTENT = {
         {"kind": "Course", "name": "Introduction to Python Course", "date": "Feb 05 · 2026", "type": "preview", "src": "new_image/bootdev_certificate (2).png", "title": "Introduction to Python Course - Certificate"},
     ],
     "theme": {
-        "bg": "#edf2f4",
-        "accent": "#1f5aff",
-        "ink": "#13222e",
-        "particles": 0,
+        "bg": "#161a28",
+        "accent": "#6de6a2",
+        "ink": "#e6edf8",
+        "particles": 72,
     },
 }
 

@@ -35,7 +35,6 @@ class Settings(BaseSettings):
     github_user: str = "ahmojo"
     github_token: str = ""  # optional, raises rate limit from 60 -> 5000/hr
     projects: dict[str, str] = {
-        "Dieses Portfolio": "ahmojo/Portfolio-Site",
         "Regal-Erkennung für KMU": "ahmojo/Badenhackt_KMU_Trifft_KI",
         "Codex Claude Transfer": "ahmojo/codex-claude-transfer",
         "CLI-Agent mit Tool-Nutzung": "ahmojo/AI_Agent",

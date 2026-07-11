@@ -98,10 +98,10 @@ class LearnItem(BaseModel):
     title: Optional[str] = None
 
 class ThemeContent(BaseModel):
-    bg: str = "#161a28"
-    accent: str = "#6de6a2"
-    ink: str = "#e6edf8"
-    particles: int = 72
+    bg: str = "#edf2f4"
+    accent: str = "#1f5aff"
+    ink: str = "#13222e"
+    particles: int = 0
 
 class SiteContent(BaseModel):
     hero: HeroContent = HeroContent()

@@ -10,13 +10,16 @@ import asyncio
 import logging
 from pathlib import Path
 
-from fastapi import Depends, FastAPI, File, Request, UploadFile
+from fastapi import Depends, FastAPI, File, HTTPException, Request, UploadFile
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse, JSONResponse, Response
 from fastapi.staticfiles import StaticFiles
 
 from .config import settings, validate_production_settings
-from .db import DB_PATH, analytics, init_db, load_content, record_visit
+from . import db
+from .db import analytics, init_db, load_content, record_visit
+from .privacy import daily_visitor_hash, referrer_hostname, resolve_client_ip
+from .restore_upload import RestoreUploadTooLarge, stage_restore_upload
 from .routers import content, now, projects, stats, upload, uptime
 from .security import require_admin, router as auth_router
 
@@ -116,16 +119,17 @@ def create_app() -> FastAPI:
                 or "." in path.rsplit("/", 1)[-1]
             ):
                 return response
-            ip = (
-                request.headers.get("cf-connecting-ip", "").split(",")[0].strip()
-                or request.headers.get("x-forwarded-for", "").split(",")[0].strip()
-                or (request.client.host if request.client else "")
+            peer_ip = request.client.host if request.client else ""
+            client_ip = resolve_client_ip(
+                peer_ip,
+                request.headers.get("cf-connecting-ip", ""),
+                request.headers.get("x-forwarded-for", ""),
+                settings.trusted_proxy_cidrs,
             )
             record_visit(
                 path,
-                request.headers.get("referer", ""),
-                request.headers.get("user-agent", ""),
-                ip,
+                referrer_hostname(request.headers.get("referer", "")),
+                daily_visitor_hash(client_ip, db.get_session_secret()),
             )
         except Exception:
             pass
@@ -153,9 +157,9 @@ def create_app() -> FastAPI:
 
     @app.get("/api/backup", dependencies=[Depends(require_admin)])
     def download_backup():
-        if not DB_PATH.exists():
+        if not db.DB_PATH.exists():
             return JSONResponse({"detail": "no database yet"}, status_code=404)
-        data = DB_PATH.read_bytes()
+        data = db.DB_PATH.read_bytes()
         ts = __import__("datetime").datetime.now().strftime("%Y%m%d-%H%M%S")
         return Response(
             content=data,
@@ -165,12 +169,38 @@ def create_app() -> FastAPI:
 
     @app.post("/api/restore", dependencies=[Depends(require_admin)])
     async def restore_backup(file: UploadFile = File(...)):
-        data = await file.read()
-        if not data.startswith(b"SQLite format 3"):
-            return JSONResponse({"detail": "not a valid SQLite file"}, status_code=400)
-        DB_PATH.parent.mkdir(parents=True, exist_ok=True)
-        DB_PATH.write_bytes(data)
-        return {"ok": True, "bytes": len(data)}
+        db.DB_PATH.parent.mkdir(parents=True, exist_ok=True)
+        temp_path: Path | None = None
+        try:
+            try:
+                temp_path, written = await stage_restore_upload(
+                    file, db.DB_PATH.parent, settings.restore_max_bytes
+                )
+            except RestoreUploadTooLarge as exc:
+                raise HTTPException(
+                    status_code=413,
+                    detail="backup exceeds the restore size limit",
+                ) from exc
+
+            if written == 0:
+                raise HTTPException(status_code=400, detail="backup is empty")
+
+            restored_bytes, backup_path = db.restore_database(temp_path)
+            temp_path = None
+            log.info(
+                "database restore completed; pre-restore backup saved as %s",
+                backup_path.name,
+            )
+            return {"ok": True, "bytes": restored_bytes}
+        except db.RestoreValidationError as exc:
+            raise HTTPException(status_code=400, detail=str(exc)) from exc
+        finally:
+            await file.close()
+            if temp_path is not None:
+                try:
+                    temp_path.unlink()
+                except FileNotFoundError:
+                    pass
 
     app.include_router(auth_router)
     app.include_router(content.router)

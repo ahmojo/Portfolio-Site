@@ -6,15 +6,36 @@ in ./data/portfolio.db (created on first run).
 from __future__ import annotations
 
 import json
+import os
 import secrets
+import shutil
 import sqlite3
-from contextlib import contextmanager
+import threading
+import uuid
+from contextlib import closing, contextmanager
+from datetime import datetime, timezone
 from pathlib import Path
 
 from .config import settings
+from .privacy import referrer_hostname
 
 DB_PATH = Path("data/portfolio.db")
 SESSION_SECRET_PATH = Path("data/.session_secret")
+DB_LOCK = threading.RLock()
+
+EXPECTED_SCHEMA = {
+    "now_state": {"id", "status", "detail", "updated_at"},
+    "content": {"key", "data", "updated_at"},
+    "visits": {
+        "id",
+        "path",
+        "referrer",
+        "user_agent",
+        "ip",
+        "country",
+        "created_at",
+    },
+}
 
 SCHEMA = """
 CREATE TABLE IF NOT EXISTS now_state (
@@ -110,7 +131,7 @@ DEFAULT_CONTENT = {
         },
         {
             "title": "Dieses Portfolio",
-            "desc": "Kein Template - das Frontend spricht mit einem eigenen <b style=\"color:var(--acc)\">FastAPI</b>-Backend: Live-GitHub-Stats, Projekt-Metadaten, ein Admin-Panel zum Bearbeiten der Inhalte und Uptime-Monitoring. Selbst gehostet in Docker auf einer Oracle-VM hinter Cloudflare.",
+            "desc": "Kein Template - das Frontend spricht mit einem eigenen <b style=\"color:var(--acc)\">FastAPI</b>-Backend: Live-GitHub-Stats, Projekt-Metadaten, ein Admin-Panel zum Bearbeiten der Inhalte und Uptime-Monitoring. Deployed on a self-managed Oracle Cloud VM.",
             "stack": "Python · FastAPI · SQLite · Docker · Oracle Cloud · Cloudflare",
             "repo": "",
             "featured": False,
@@ -234,14 +255,42 @@ DEFAULT_CONTENT = {
 
 def init_db() -> None:
     DB_PATH.parent.mkdir(parents=True, exist_ok=True)
-    with _conn() as conn:
-        conn.executescript(SCHEMA)
-        # seed the site content snapshot on first boot
-        conn.execute(
-            "INSERT OR IGNORE INTO content (key, data) VALUES (?, ?)",
-            ("site", json.dumps(DEFAULT_CONTENT)),
-        )
-        conn.commit()
+    with DB_LOCK:
+        with closing(_conn()) as conn:
+            conn.executescript(SCHEMA)
+            # One-time/ongoing privacy migration for rows created by older
+            # versions that stored raw IPs, full referrers, and User-Agents.
+            rows = conn.execute(
+                "SELECT id, referrer, ip FROM visits "
+                "WHERE user_agent != '' OR referrer LIKE '%/%' OR ip != ''"
+            ).fetchall()
+            for row in rows:
+                stored_ip = row["ip"] or ""
+                stored_referrer = row["referrer"] or ""
+                reduced_referrer = referrer_hostname(stored_referrer)
+                if not reduced_referrer and stored_referrer and "/" not in stored_referrer:
+                    reduced_referrer = referrer_hostname(
+                        f"https://{stored_referrer}"
+                    )
+                is_daily_hash = (
+                    len(stored_ip) == 32
+                    and all(char in "0123456789abcdef" for char in stored_ip)
+                )
+                conn.execute(
+                    "UPDATE visits SET referrer = ?, user_agent = '', ip = ? "
+                    "WHERE id = ?",
+                    (
+                        reduced_referrer,
+                        stored_ip if is_daily_hash else "",
+                        row["id"],
+                    ),
+                )
+            # seed the site content snapshot on first boot
+            conn.execute(
+                "INSERT OR IGNORE INTO content (key, data) VALUES (?, ?)",
+                ("site", json.dumps(DEFAULT_CONTENT)),
+            )
+            conn.commit()
 
 
 def get_session_secret() -> str:
@@ -292,25 +341,33 @@ def _conn() -> sqlite3.Connection:
 @contextmanager
 def get_conn():
     """Yield a connection, auto-commit on success, rollback on error."""
-    conn = _conn()
-    try:
-        yield conn
-        conn.commit()
-    except Exception:
-        conn.rollback()
-        raise
-    finally:
-        conn.close()
+    with DB_LOCK:
+        conn = _conn()
+        try:
+            yield conn
+            conn.commit()
+        except Exception:
+            conn.rollback()
+            raise
+        finally:
+            conn.close()
 
 
-def record_visit(path: str, referrer: str, user_agent: str, ip: str) -> None:
-    """Persist one page visit. Fires-and-forgets; never raises to the caller."""
+def record_visit(path: str, referrer_host: str, visitor_hash: str) -> None:
+    """Persist a privacy-reduced page visit; never raise to the caller.
+
+    The legacy ``ip`` column stores only a daily, keyed hash. Raw IP addresses
+    and User-Agent strings are deliberately not retained.
+    """
     try:
         with get_conn() as conn:
             conn.execute(
-                "INSERT INTO visits (path, referrer, user_agent, ip) VALUES (?, ?, ?, ?)",
-                (path[:255] or "/", (referrer or "")[:255],
-                 (user_agent or "")[:255], (ip or "")[:64]),
+                "INSERT INTO visits (path, referrer, user_agent, ip) VALUES (?, ?, '', ?)",
+                (
+                    path[:255] or "/",
+                    (referrer_host or "")[:255],
+                    (visitor_hash or "")[:64],
+                ),
             )
     except Exception:
         pass  # analytics must never break a request
@@ -328,8 +385,10 @@ def analytics(days: int = 30) -> dict:
             (f"-{days} days",),
         ).fetchall()
         total = conn.execute("SELECT COUNT(*) AS c FROM visits").fetchone()
-        unique_ips = conn.execute(
-            "SELECT COUNT(DISTINCT ip) AS c FROM visits WHERE ip != ''"
+        unique_visitors = conn.execute(
+            "SELECT COUNT(DISTINCT ip) AS c FROM visits "
+            "WHERE created_at >= datetime('now', ?) AND ip != ''",
+            (f"-{days} days",),
         ).fetchone()
         top_paths = conn.execute(
             "SELECT path, COUNT(*) AS c FROM visits "
@@ -350,10 +409,122 @@ def analytics(days: int = 30) -> dict:
     return {
         "days": days,
         "total_visits": int(total["c"]) if total else 0,
-        "unique_visitors": int(unique_ips["c"]) if unique_ips else 0,
+        "unique_visitors": int(unique_visitors["c"]) if unique_visitors else 0,
         "per_day": [{"date": r["d"], "visits": int(r["c"])} for r in per_day],
         "top_paths": [{"path": r["path"], "visits": int(r["c"])} for r in top_paths],
         "top_referrers": [{"referrer": r["referrer"], "visits": int(r["c"])} for r in top_refs],
         "recent": [{"path": r["path"], "referrer": r["referrer"],
                     "at": r["created_at"]} for r in recent],
     }
+
+
+class RestoreValidationError(ValueError):
+    """Raised when an uploaded database cannot safely replace the active DB."""
+
+
+def _readonly_connection(path: Path) -> sqlite3.Connection:
+    uri = f"file:{path.resolve().as_posix()}?mode=ro"
+    conn = sqlite3.connect(uri, uri=True)
+    conn.row_factory = sqlite3.Row
+    return conn
+
+
+def validate_restore_candidate(path: Path) -> None:
+    """Validate integrity, expected schema, and required application data."""
+    try:
+        with closing(_readonly_connection(path)) as conn:
+            integrity_rows = conn.execute("PRAGMA integrity_check").fetchall()
+            if not integrity_rows or any(row[0] != "ok" for row in integrity_rows):
+                raise RestoreValidationError("database integrity check failed")
+
+            tables = {
+                row["name"]
+                for row in conn.execute(
+                    "SELECT name FROM sqlite_master WHERE type = 'table'"
+                )
+            }
+            missing_tables = set(EXPECTED_SCHEMA) - tables
+            if missing_tables:
+                names = ", ".join(sorted(missing_tables))
+                raise RestoreValidationError(f"database schema is missing: {names}")
+
+            for table, expected_columns in EXPECTED_SCHEMA.items():
+                columns = {
+                    row["name"]
+                    for row in conn.execute(f'PRAGMA table_info("{table}")')
+                }
+                missing_columns = expected_columns - columns
+                if missing_columns:
+                    names = ", ".join(sorted(missing_columns))
+                    raise RestoreValidationError(
+                        f"table {table} is missing columns: {names}"
+                    )
+
+            content_row = conn.execute(
+                "SELECT data FROM content WHERE key = 'site'"
+            ).fetchone()
+            if content_row is None:
+                raise RestoreValidationError("database has no site content")
+            content = json.loads(content_row["data"])
+            if not isinstance(content, dict):
+                raise RestoreValidationError("site content must be a JSON object")
+
+            now_row = conn.execute(
+                "SELECT id FROM now_state WHERE id = 1"
+            ).fetchone()
+            if now_row is None:
+                raise RestoreValidationError("database has no current status row")
+
+            conn.execute("SELECT COUNT(*) FROM visits").fetchone()
+    except RestoreValidationError:
+        raise
+    except (json.JSONDecodeError, sqlite3.Error, OSError) as exc:
+        raise RestoreValidationError("database validation failed") from exc
+
+
+def _remove_sqlite_sidecars(path: Path) -> None:
+    for suffix in ("-wal", "-shm"):
+        sidecar = Path(f"{path}{suffix}")
+        try:
+            sidecar.unlink()
+        except FileNotFoundError:
+            pass
+
+
+def _backup_active_database(destination: Path) -> None:
+    with closing(sqlite3.connect(DB_PATH)) as source:
+        with closing(sqlite3.connect(destination)) as target:
+            source.backup(target)
+
+
+def restore_database(candidate_path: Path) -> tuple[int, Path]:
+    """Atomically replace the active DB and roll back on any post-swap failure."""
+    candidate_path = candidate_path.resolve()
+    validate_restore_candidate(candidate_path)
+
+    DB_PATH.parent.mkdir(parents=True, exist_ok=True)
+    backup_dir = DB_PATH.parent / "backups"
+    backup_dir.mkdir(parents=True, exist_ok=True)
+    stamp = datetime.now(timezone.utc).strftime("%Y%m%d-%H%M%S")
+    backup_path = backup_dir / f"portfolio-before-restore-{stamp}-{uuid.uuid4().hex[:8]}.db"
+    rollback_path = DB_PATH.parent / f".portfolio-rollback-{uuid.uuid4().hex}.db"
+
+    with DB_LOCK:
+        _backup_active_database(backup_path)
+        try:
+            _remove_sqlite_sidecars(DB_PATH)
+            os.replace(candidate_path, DB_PATH)
+            validate_restore_candidate(DB_PATH)
+        except Exception:
+            shutil.copy2(backup_path, rollback_path)
+            _remove_sqlite_sidecars(DB_PATH)
+            os.replace(rollback_path, DB_PATH)
+            validate_restore_candidate(DB_PATH)
+            raise
+        finally:
+            try:
+                rollback_path.unlink()
+            except FileNotFoundError:
+                pass
+
+    return DB_PATH.stat().st_size, backup_path

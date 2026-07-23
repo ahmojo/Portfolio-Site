@@ -20,6 +20,7 @@ class Settings(BaseSettings):
     host: str = "0.0.0.0"
     port: int = 8000
     expose_docs: bool = True
+    restore_max_bytes: int = 10 * 1024 * 1024
 
     # --- cors: the origins allowed to call the API ---
     # local dev = the static site served from any origin / file://
@@ -42,12 +43,40 @@ class Settings(BaseSettings):
     }
     projects_ttl: int = 600
 
+    # Proxy headers are accepted only when the direct peer belongs to one of
+    # Cloudflare's published origin-facing networks. Keep this list current
+    # with https://www.cloudflare.com/ips/.
+    trusted_proxy_cidrs: list[str] = [
+        "103.21.244.0/22",
+        "103.22.200.0/22",
+        "103.31.4.0/22",
+        "104.16.0.0/13",
+        "104.24.0.0/14",
+        "108.162.192.0/18",
+        "131.0.72.0/22",
+        "141.101.64.0/18",
+        "162.158.0.0/15",
+        "172.64.0.0/13",
+        "173.245.48.0/20",
+        "188.114.96.0/20",
+        "190.93.240.0/20",
+        "197.234.240.0/22",
+        "198.41.128.0/17",
+        "2400:cb00::/32",
+        "2606:4700::/32",
+        "2803:f800::/32",
+        "2405:b500::/32",
+        "2405:8100::/32",
+        "2a06:98c0::/29",
+        "2c0f:f248::/32",
+    ]
+
     # --- "now" endpoint ---
     # Leave empty only for local development.
     now_token: str = ""
 
     # --- uptime badge ---
-    # API key stays server-side. Leave empty to show local self-hosted status.
+    # API key stays server-side. Leave empty to show the local deployment status.
     uptime_robot_api_key: str = ""
     uptime_robot_monitor_id: str = ""
     uptime_robot_status_page_url: str = "https://stats.uptimerobot.com/PFy2MRBznP"

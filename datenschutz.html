@@ -152,16 +152,19 @@ footer{
   <section class="block">
     <h2>Eigene Besucheranalyse (Gästebuch, Kontaktformular, Statistiken)</h2>
     <p>
-      Diese Website betreibt eine eigene, selbst gehostete Besucheranalyse. Beim Aufruf
+      Diese Website betreibt eine eigene Besucheranalyse auf einer selbst verwalteten
+      Oracle Cloud VM. Beim Aufruf
       einzelner Seiten werden folgende technische Daten in einer Datenbank gespeichert:
-      aufgerufene Seite (Pfad), Datum und Uhrzeit des Zugriffs, IP-Adresse,
-      Referrer (die Seite, von der aus der Zugriff erfolgte) sowie die Browserkennung
-      (User-Agent). Aus der IP-Adresse kann sich das Herkunftsland ableiten lassen.
+      aufgerufene Seite (Pfad), Datum und Uhrzeit des Zugriffs, nur der Hostname
+      des Referrers sowie ein nicht rückrechenbarer Besucher-Hash, der täglich
+      wechselt. Rohe IP-Adressen, vollständige Referrer-URLs und Browserkennungen
+      (User-Agent) werden für diese Analyse nicht gespeichert.
     </p>
     <p>
       Diese Daten dienen ausschliesslich der technischen Verbesserung der Website,
-      der Erkennung von Missbrauch (z.B. Spam, Rate-Limiting) und der Darstellung
-      aggregierter Statistiken in der internen Administrationsoberfläche. Es findet
+      und der Darstellung aggregierter Statistiken in der internen
+      Administrationsoberfläche. Der täglich wechselnde Hash erlaubt nur eine
+      grobe Zählung pro Tag und keine Wiedererkennung über mehrere Tage. Es findet
       keine Weitergabe an Dritte statt und es werden keine Werbe- oder Tracking-Cookies
       eingesetzt.
     </p>
@@ -187,7 +190,7 @@ footer{
     </p>
   </section>
 
-  <footer>Stand: Juni 2026</footer>
+  <footer>Stand: Juli 2026</footer>
 </main>
 </body>
 </html>

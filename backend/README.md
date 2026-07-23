@@ -7,32 +7,32 @@ FastAPI + SQLite backend for the portfolio site. Runs **locally**.
 | Endpoint | Method | What it does |
 |---|---|---|
 | `/api/health` | GET | liveness check |
-| `/api/content` | GET | public - the editable site content (hero, about, skills, projects, learning, theme) |
-| `/api/content` | PUT | admin-only - replace the content blob (drives the whole site) |
+| `/api/content` | GET | public — the editable site content (hero, about, skills, projects, learning, theme) |
+| `/api/content` | PUT | admin-only — replace the content blob (drives the whole site) |
 | `/api/auth/login` | POST | login `{password}` → sets session cookie |
 | `/api/auth/logout` | POST | clear session |
 | `/api/auth/me` | GET | `{authenticated}` for the admin UI |
 | `/api/projects` | GET | live GitHub stars / language / last-update per repo (cached 10 min) |
 | `/api/stats` | GET | GitHub contributions, streaks + yearly heatmap |
-| `/api/uptime` | GET | public self-hosted status; optionally enriches from UptimeRobot server-side |
+| `/api/uptime` | GET | public deployment status; optionally enriches from UptimeRobot server-side |
 | `/api/guestbook` | GET | recent messages |
 | `/api/guestbook` | POST | add a message `{author, message}` |
 | `/api/now` | GET | current "what I'm doing" status |
 | `/api/now` | PUT | update status `{status, detail, token?}` |
 | `/api/contact` | POST | store + optionally email a contact message `{name, email, message}` |
-| `/api/docs` | - | interactive Swagger UI |
+| `/api/docs` | — | interactive Swagger UI |
 
 The app **also serves the static site** (index.html, vids/, new_image/) at `/`,
 and the **admin panel** at `/admin`, so once it's running you open
 **http://localhost:8000/** (site) or **http://localhost:8000/admin** (panel)
-and the frontend talks to the API on the same origin - no CORS setup needed.
+and the frontend talks to the API on the same origin — no CORS setup needed.
 
 If you open `index.html` directly (file://) the frontend detects the missing
 API and the form/badges fall back to placeholders without breaking.
 
 ## Quick start
 
-### Option A - Docker (recommended)
+### Option A — Docker (recommended)
 
 ```bash
 cd backend
@@ -43,7 +43,7 @@ docker compose up --build
 
 The SQLite db is persisted in `./data/portfolio.db` (a mounted volume).
 
-### Option B - uvicorn directly
+### Option B — uvicorn directly
 
 ```bash
 cd backend
@@ -59,14 +59,14 @@ uvicorn app.main:app --reload --port 8000
 
 All settings via env vars (prefix `PORTFOLIO_`), see `.env.example`.
 
-- `PORTFOLIO_GITHUB_USER` / `PORTFOLIO_PROJECTS` - repos shown on the site
-- `PORTFOLIO_GITHUB_TOKEN` - optional PAT, raises rate limit 60→5000/h
-- `PORTFOLIO_GUESTBOOK_RATE` / `PORTFOLIO_CONTACT_RATE` - per-IP/min limits
-- `PORTFOLIO_NOW_TOKEN` - required in production; protects `PUT /api/now`
-- `PORTFOLIO_ADMIN_PASSWORD` - password for the `/admin` panel; production refuses `admin`
-- `PORTFOLIO_SESSION_SECRET` - cookie signing secret; production requires a real random value
-- `PORTFOLIO_SESSION_TTL_HOURS` - login session lifetime (default 12h)
-- `PORTFOLIO_SMTP_HOST` (+ USER/PASS/TO) - enables contact email forwarding
+- `PORTFOLIO_GITHUB_USER` / `PORTFOLIO_PROJECTS` — repos shown on the site
+- `PORTFOLIO_GITHUB_TOKEN` — optional PAT, raises rate limit 60→5000/h
+- `PORTFOLIO_GUESTBOOK_RATE` / `PORTFOLIO_CONTACT_RATE` — per-IP/min limits
+- `PORTFOLIO_NOW_TOKEN` — required in production; protects `PUT /api/now`
+- `PORTFOLIO_ADMIN_PASSWORD` — password for the `/admin` panel; production refuses `admin`
+- `PORTFOLIO_SESSION_SECRET` — cookie signing secret; production requires a real random value
+- `PORTFOLIO_SESSION_TTL_HOURS` — login session lifetime (default 12h)
+- `PORTFOLIO_SMTP_HOST` (+ USER/PASS/TO) — enables contact email forwarding
 
 - `PORTFOLIO_UPTIME_ROBOT_API_KEY` / `PORTFOLIO_UPTIME_ROBOT_MONITOR_ID` - optional UptimeRobot status badge; keep the key server-side
 - `PORTFOLIO_UPTIME_ROBOT_STATUS_PAGE_URL` - optional public status page link
@@ -78,13 +78,13 @@ Production Docker will not start with the placeholder/default password.
 
 The panel lets you edit, live, with a save button:
 
-- **Hero** - name, tagline, and the rotating typing phrases
-- **About** - paragraphs, the 4 stat tiles, and the "currently building" status
-- **Skills** - rows of languages / tools / interests
-- **Projects** - add / remove / reorder projects (title, description, stack, GitHub
+- **Hero** — name, tagline, and the rotating typing phrases
+- **About** — paragraphs, the 4 stat tiles, and the "currently building" status
+- **Skills** — rows of languages / tools / interests
+- **Projects** — add / remove / reorder projects (title, description, stack, GitHub
   repo, badges, featured flag + media)
-- **Learning** - courses & projects (link type or certificate-preview type)
-- **Theme** - background / accent / text colors via pickers + particle count slider
+- **Learning** — courses & projects (link type or certificate-preview type)
+- **Theme** — background / accent / text colors via pickers + particle count slider
 
 Changes are saved to SQLite and served to the public site via `/api/content`.
 The public page fetches that blob on load and rebuilds itself; if the API is

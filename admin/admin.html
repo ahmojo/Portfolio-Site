@@ -330,7 +330,7 @@ input[type=color]{width:44px;height:34px;border:1px solid var(--line-2);border-r
         </div>
         <div class="an-stats">
           <div class="an-stat"><div class="an-v" id="an-total">0</div><div class="an-l">total visits</div></div>
-          <div class="an-stat"><div class="an-v" id="an-unique">0</div><div class="an-l">unique visitors</div></div>
+          <div class="an-stat"><div class="an-v" id="an-unique">0</div><div class="an-l">unique visitor-days</div></div>
           <div class="an-stat"><div class="an-v" id="an-avg">0</div><div class="an-l">avg / day</div></div>
           <div class="an-stat"><div class="an-v" id="an-today">0</div><div class="an-l">today</div></div>
         </div>
@@ -620,6 +620,13 @@ function renderProjects(){
     f.querySelector('[data-k="desc"]').addEventListener('input',e=>{content.projects[i].desc=e.target.value;dirty=true});
     f.querySelector('[data-k="stack"]').addEventListener('input',e=>{content.projects[i].stack=e.target.value;dirty=true});
     f.querySelector('[data-k="repo"]').addEventListener('input',e=>{content.projects[i].repo=e.target.value;dirty=true});
+    f.querySelector('[data-k="repo"]').addEventListener('blur',e=>{
+      const repo=e.target.value.trim()
+        .replace(/^https?:\/\/(?:www\.)?github\.com\//i,'')
+        .replace(/[?#].*$/,'').replace(/\.git\/?$/i,'')
+        .replace(/^\/+|\/+$/g,'').split('/').slice(0,2).join('/');
+      e.target.value=repo;content.projects[i].repo=repo;dirty=true;
+    });
     f.querySelector('[data-k="featured"]').addEventListener('change',e=>{content.projects[i].featured=e.target.value==='true';renderProjects();dirty=true});
     f.querySelector('[data-k="media"]').addEventListener('input',e=>{content.projects[i].media=e.target.value;dirty=true});
     attachUpload(f.querySelector('[data-k="media"]'));

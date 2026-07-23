@@ -13,9 +13,11 @@ class ProjectOut(BaseModel):
     repo: str
     url: str
     stars: int
+    forks: int = 0
     language: Optional[str] = None
     updated_at: Optional[str] = None  # ISO from GitHub
     description: Optional[str] = None
+    exists: bool = True
     cached: bool = False
     fetched_at: Optional[Union[float, str]] = None
 

@@ -17,6 +17,7 @@ from datetime import datetime, timezone
 from pathlib import Path
 
 from .config import settings
+from .models import OPEN_SOURCE_DEFAULTS
 from .privacy import referrer_hostname
 
 DB_PATH = Path("data/portfolio.db")
@@ -233,6 +234,7 @@ DEFAULT_CONTENT = {
             ),
         },
     ],
+    "open_source": [dict(item) for item in OPEN_SOURCE_DEFAULTS],
     "learning": [
         {"kind": "Project", "name": "Build an AI Agent", "date": "Apr 2026", "type": "url", "url": "https://github.com/ahmojo/AI_Agent"},
         {"kind": "Course", "name": "Learn Functional Programming in Python", "date": "Apr 22 · 2026", "type": "preview", "src": "new_image/bootdev_certificate.png", "title": "Learn Functional Programming in Python - Certificate"},

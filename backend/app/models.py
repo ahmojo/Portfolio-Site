@@ -90,6 +90,40 @@ class ProjectItem(BaseModel):
     slug: str = ""                 # url-safe id for /p/{slug} deep-dive page
     content: str = ""              # markdown body for the deep-dive (optional)
 
+
+OPEN_SOURCE_DEFAULTS = (
+    {
+        "repo": "nushell/nushell",
+        "pr": 18666,
+        "title": "Parser-Scope-Leak behoben",
+        "desc": "Scope-Verlust bei Interpolation behoben und Regressionstests ergänzt.",
+        "tech": "Rust · Parser",
+    },
+    {
+        "repo": "pygments/pygments",
+        "pr": 3180,
+        "title": "CSS-Farbe erweitert",
+        "desc": "transparent in Styles und HTML-Ausgabe unterstützt und getestet.",
+        "tech": "Python · pytest",
+    },
+    {
+        "repo": "go-git/go-git",
+        "pr": 2248,
+        "title": "Gitignore-API erklärt",
+        "desc": "Pfade, Verzeichnisse und Match-Priorität präziser dokumentiert.",
+        "tech": "Go · API Docs",
+    },
+)
+
+
+class OpenSourceItem(BaseModel):
+    repo: str = Field("", max_length=160, strip_whitespace=True)
+    pr: int = Field(1, ge=1, le=999_999_999)
+    title: str = Field("", max_length=120, strip_whitespace=True)
+    desc: str = Field("", max_length=280, strip_whitespace=True)
+    tech: str = Field("", max_length=100, strip_whitespace=True)
+
+
 class LearnItem(BaseModel):
     kind: str = "Course"          # "Project" or "Course"
     name: str = ""
@@ -112,5 +146,10 @@ class SiteContent(BaseModel):
     stats: list[StatItem] = []
     skills: list[SkillRow] = []
     projects: list[ProjectItem] = []
+    open_source: list[OpenSourceItem] = Field(
+        default_factory=lambda: [
+            OpenSourceItem(**item) for item in OPEN_SOURCE_DEFAULTS
+        ]
+    )
     learning: list[LearnItem] = []
     theme: ThemeContent = ThemeContent()

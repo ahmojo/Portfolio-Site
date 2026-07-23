@@ -221,9 +221,10 @@ input[type=color]{width:44px;height:34px;border:1px solid var(--line-2);border-r
       <button class="tab-btn" data-tab="about"><span class="n">02</span> About</button>
       <button class="tab-btn" data-tab="skills"><span class="n">03</span> Skills</button>
       <button class="tab-btn" data-tab="projects"><span class="n">04</span> Projects</button>
-      <button class="tab-btn" data-tab="learning"><span class="n">05</span> Learning</button>
-      <button class="tab-btn" data-tab="theme"><span class="n">06</span> Theme</button>
-      <button class="tab-btn" data-tab="analytics"><span class="n">07</span> Analytics</button>
+      <button class="tab-btn" data-tab="opensource"><span class="n">05</span> Open Source</button>
+      <button class="tab-btn" data-tab="learning"><span class="n">06</span> Learning</button>
+      <button class="tab-btn" data-tab="theme"><span class="n">07</span> Theme</button>
+      <button class="tab-btn" data-tab="analytics"><span class="n">08</span> Analytics</button>
     </div>
     <div class="panel">
       <!-- HERO -->
@@ -283,6 +284,14 @@ input[type=color]{width:44px;height:34px;border:1px solid var(--line-2);border-r
         <p class="field-desc">// order = display order. mark one as featured (gets media)</p>
         <div id="projects-list"></div>
         <button class="btn" id="add-project" style="margin-top:10px">+ add project</button>
+      </div>
+
+      <!-- OPEN SOURCE -->
+      <div class="panel-section" data-section="opensource">
+        <h2 class="field-title">Open Source</h2>
+        <p class="field-desc">// merged pull requests. every three cards start a new public row.</p>
+        <div id="opensource-list"></div>
+        <button class="btn" id="add-opensource" style="margin-top:10px">+ add pull request</button>
       </div>
 
       <!-- LEARNING -->
@@ -364,11 +373,22 @@ input[type=color]{width:44px;height:34px;border:1px solid var(--line-2);border-r
 /* ───────── state ───────── */
 let content = null;
 let dirty = false;
+const DEFAULT_OPEN_SOURCE = [
+  {repo:'nushell/nushell',pr:18666,title:'Parser-Scope-Leak behoben',desc:'Scope-Verlust bei Interpolation behoben und Regressionstests ergänzt.',tech:'Rust · Parser'},
+  {repo:'pygments/pygments',pr:3180,title:'CSS-Farbe erweitert',desc:'transparent in Styles und HTML-Ausgabe unterstützt und getestet.',tech:'Python · pytest'},
+  {repo:'go-git/go-git',pr:2248,title:'Gitignore-API erklärt',desc:'Pfade, Verzeichnisse und Match-Priorität präziser dokumentiert.',tech:'Go · API Docs'}
+];
 
 /* ───────── helpers ───────── */
 function $(s,el=document){return el.querySelector(s)}
 function $$(s,el=document){return [...el.querySelectorAll(s)]}
 function esc(s){return String(s??'').replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]))}
+function normalizeGithubRepo(value){
+  return String(value||'').trim()
+    .replace(/^https?:\/\/(?:www\.)?github\.com\//i,'')
+    .replace(/[?#].*$/,'').replace(/\.git\/?$/i,'')
+    .replace(/^\/+|\/+$/g,'').split('/').slice(0,2).join('/');
+}
 
 let toastT;
 function toast(msg,kind){
@@ -435,6 +455,9 @@ async function showApp(){
   $('#loading').style.display='flex';
   try{
     content=await api('/api/content');
+    if(!Array.isArray(content.open_source)){
+      content.open_source=DEFAULT_OPEN_SOURCE.map(item=>({...item}));
+    }
     renderAll();
     $('#loading').style.display='none';
     $('#app').classList.add('show');
@@ -641,6 +664,44 @@ function renderProjects(){
 }
 $('#add-project').addEventListener('click',()=>{content.projects.push({title:'New Project',desc:'',stack:'',repo:'',featured:false,badges:[]});renderProjects()});
 
+/* ───────── OPEN SOURCE ───────── */
+function renderOpenSource(){
+  const wrap=$('#opensource-list');wrap.innerHTML='';
+  content.open_source.forEach((item,i)=>{
+    const f=document.createElement('div');f.className='item';f.dataset.i=i;
+    f.innerHTML=`<div class="item-head"><span class="idx">PR ${i+1}</span>${itemControls(i,content.open_source,renderOpenSource)}</div>
+      <div class="field-row r2">
+        <div class="field"><label>GitHub repo (owner/name)</label><input type="text" data-k="repo" placeholder="owner/repository"></div>
+        <div class="field"><label>Pull request number</label><input type="number" min="1" step="1" data-k="pr"></div>
+      </div>
+      <div class="field"><label>Short title</label><input type="text" maxlength="120" data-k="title"></div>
+      <div class="field"><label>Short description</label><textarea rows="2" maxlength="280" data-k="desc"></textarea></div>
+      <div class="field"><label>Technology label</label><input type="text" maxlength="100" data-k="tech" placeholder="Rust · Parser"></div>`;
+    f.querySelector('[data-k="repo"]').value=item.repo||'';
+    f.querySelector('[data-k="pr"]').value=item.pr||1;
+    f.querySelector('[data-k="title"]').value=item.title||'';
+    f.querySelector('[data-k="desc"]').value=item.desc||'';
+    f.querySelector('[data-k="tech"]').value=item.tech||'';
+
+    f.querySelector('[data-k="repo"]').addEventListener('input',e=>{content.open_source[i].repo=e.target.value;dirty=true});
+    f.querySelector('[data-k="repo"]').addEventListener('blur',e=>{
+      const repo=normalizeGithubRepo(e.target.value);
+      e.target.value=repo;content.open_source[i].repo=repo;dirty=true;
+    });
+    f.querySelector('[data-k="pr"]').addEventListener('input',e=>{content.open_source[i].pr=Math.max(1,Number.parseInt(e.target.value,10)||1);dirty=true});
+    f.querySelector('[data-k="title"]').addEventListener('input',e=>{content.open_source[i].title=e.target.value;dirty=true});
+    f.querySelector('[data-k="desc"]').addEventListener('input',e=>{content.open_source[i].desc=e.target.value;dirty=true});
+    f.querySelector('[data-k="tech"]').addEventListener('input',e=>{content.open_source[i].tech=e.target.value;dirty=true});
+
+    bindItemControls(f,content.open_source,()=>{dirty=true;renderOpenSource()});
+    wrap.appendChild(f);
+  });
+}
+$('#add-opensource').addEventListener('click',()=>{
+  content.open_source.push({repo:'',pr:1,title:'New contribution',desc:'',tech:''});
+  dirty=true;renderOpenSource();
+});
+
 /* ───────── LEARNING ───────── */
 function renderLearning(){
   const wrap=$('#learning-list');wrap.innerHTML='';
@@ -768,7 +829,7 @@ function drawChart(perDay){
 }
 $('#an-days').addEventListener('change',loadAnalytics);
 
-function renderAll(){renderHero();renderAbout();renderSkills();renderProjects();renderLearning();renderTheme()}
+function renderAll(){renderHero();renderAbout();renderSkills();renderProjects();renderOpenSource();renderLearning();renderTheme()}
 
 $('#save-btn').addEventListener('click',async()=>{
   const btn=$('#save-btn');btn.disabled=true;btn.textContent='saving…';

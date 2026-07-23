@@ -23,6 +23,8 @@ from .privacy import referrer_hostname
 DB_PATH = Path("data/portfolio.db")
 SESSION_SECRET_PATH = Path("data/.session_secret")
 DB_LOCK = threading.RLock()
+ANALYTICS_RETENTION_DAYS = 90
+ANALYTICS_TOKEN_PREFIX = "h1:"
 
 EXPECTED_SCHEMA = {
     "now_state": {"id", "status", "detail", "updated_at"},
@@ -67,6 +69,8 @@ CREATE TABLE IF NOT EXISTS visits (
 );
 CREATE INDEX IF NOT EXISTS idx_visits_created ON visits(created_at);
 CREATE INDEX IF NOT EXISTS idx_visits_path ON visits(path);
+CREATE INDEX IF NOT EXISTS idx_visits_token_path_created
+    ON visits(ip, path, created_at);
 """
 
 # Default site content, seeded into the `content` table on first boot.
@@ -274,9 +278,10 @@ def init_db() -> None:
                     reduced_referrer = referrer_hostname(
                         f"https://{stored_referrer}"
                     )
+                hash_value = stored_ip.removeprefix(ANALYTICS_TOKEN_PREFIX)
                 is_daily_hash = (
-                    len(stored_ip) == 32
-                    and all(char in "0123456789abcdef" for char in stored_ip)
+                    len(hash_value) == 32
+                    and all(char in "0123456789abcdef" for char in hash_value)
                 )
                 conn.execute(
                     "UPDATE visits SET referrer = ?, user_agent = '', ip = ? "
@@ -361,14 +366,29 @@ def record_visit(path: str, referrer_host: str, visitor_hash: str) -> None:
     The legacy ``ip`` column stores only a daily, keyed hash. Raw IP addresses
     and User-Agent strings are deliberately not retained.
     """
+    if not visitor_hash:
+        return
+    visitor_token = f"{ANALYTICS_TOKEN_PREFIX}{visitor_hash}"
     try:
         with get_conn() as conn:
+            conn.execute(
+                "DELETE FROM visits WHERE created_at < datetime('now', ?)",
+                (f"-{ANALYTICS_RETENTION_DAYS} days",),
+            )
+            already_counted = conn.execute(
+                "SELECT 1 FROM visits "
+                "WHERE path = ? AND ip = ? AND DATE(created_at) = DATE('now') "
+                "LIMIT 1",
+                (path[:255] or "/", visitor_token),
+            ).fetchone()
+            if already_counted:
+                return
             conn.execute(
                 "INSERT INTO visits (path, referrer, user_agent, ip) VALUES (?, ?, '', ?)",
                 (
                     path[:255] or "/",
                     (referrer_host or "")[:255],
-                    (visitor_hash or "")[:64],
+                    visitor_token[:64],
                 ),
             )
     except Exception:
@@ -378,35 +398,47 @@ def record_visit(path: str, referrer_host: str, visitor_hash: str) -> None:
 def analytics(days: int = 30) -> dict:
     """Aggregate visit data for the admin dashboard."""
     days = max(1, min(days, 365))
+    window = f"-{days} days"
+    human_token = f"{ANALYTICS_TOKEN_PREFIX}%"
     with get_conn() as conn:
-        # total + per-day counts over the window
+        conn.execute(
+            "DELETE FROM visits WHERE created_at < datetime('now', ?)",
+            (f"-{ANALYTICS_RETENTION_DAYS} days",),
+        )
         per_day = conn.execute(
             "SELECT DATE(created_at) AS d, COUNT(*) AS c FROM visits "
-            "WHERE created_at >= datetime('now', ?) "
+            "WHERE created_at >= datetime('now', ?) AND ip LIKE ? "
             "GROUP BY d ORDER BY d",
-            (f"-{days} days",),
+            (window, human_token),
         ).fetchall()
-        total = conn.execute("SELECT COUNT(*) AS c FROM visits").fetchone()
+        total = conn.execute(
+            "SELECT COUNT(*) AS c FROM visits "
+            "WHERE created_at >= datetime('now', ?) AND ip LIKE ?",
+            (window, human_token),
+        ).fetchone()
         unique_visitors = conn.execute(
             "SELECT COUNT(DISTINCT ip) AS c FROM visits "
-            "WHERE created_at >= datetime('now', ?) AND ip != ''",
-            (f"-{days} days",),
+            "WHERE created_at >= datetime('now', ?) AND ip LIKE ?",
+            (window, human_token),
         ).fetchone()
         top_paths = conn.execute(
             "SELECT path, COUNT(*) AS c FROM visits "
-            "WHERE created_at >= datetime('now', ?) "
+            "WHERE created_at >= datetime('now', ?) AND ip LIKE ? "
             "GROUP BY path ORDER BY c DESC LIMIT 8",
-            (f"-{days} days",),
+            (window, human_token),
         ).fetchall()
         top_refs = conn.execute(
             "SELECT referrer, COUNT(*) AS c FROM visits "
-            "WHERE created_at >= datetime('now', ?) AND referrer != '' "
+            "WHERE created_at >= datetime('now', ?) AND ip LIKE ? "
+            "AND referrer != '' "
             "GROUP BY referrer ORDER BY c DESC LIMIT 8",
-            (f"-{days} days",),
+            (window, human_token),
         ).fetchall()
         recent = conn.execute(
             "SELECT path, referrer, created_at FROM visits "
-            "ORDER BY id DESC LIMIT 15"
+            "WHERE created_at >= datetime('now', ?) AND ip LIKE ? "
+            "ORDER BY id DESC LIMIT 15",
+            (window, human_token),
         ).fetchall()
     return {
         "days": days,

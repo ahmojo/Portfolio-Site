@@ -20,7 +20,7 @@ FastAPI + SQLite backend for the portfolio site. Runs **locally**.
 | `/api/now` | GET | current "what I'm doing" status |
 | `/api/now` | PUT | update status `{status, detail, token?}` |
 | `/api/contact` | POST | store + optionally email a contact message `{name, email, message}` |
-| `/api/docs` | — | interactive Swagger UI |
+
 
 The app **also serves the static site** (index.html, vids/, new_image/) at `/`,
 and the **admin panel** at `/admin`, so once it's running you open

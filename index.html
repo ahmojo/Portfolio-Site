@@ -146,17 +146,18 @@ button{font-family:inherit;background:none;border:none;cursor:pointer;color:inhe
   box-shadow:0 10px 30px -18px rgba(0,0,0,.7);
 }
 .nav-inner{
-  max-width:var(--maxw);margin:0 auto;
-  padding:16px 32px;
+  width:100%;
+  padding:14px clamp(24px,4vw,64px);
   display:flex;align-items:center;justify-content:space-between;
   gap:28px;
 }
 .nav-logo{
   font-family:var(--sans);font-size:17px;font-weight:600;
-  color:var(--ink);display:flex;align-items:center;gap:10px;
+  color:var(--ink);display:flex;align-items:center;gap:7px;
   border:none;
-  letter-spacing:.01em;
+  letter-spacing:-.015em;
   position:relative;
+  flex:0 0 auto;
 }
 .nav-logo::after{
   content:'';position:absolute;left:0;right:0;bottom:-2px;height:1px;
@@ -164,12 +165,17 @@ button{font-family:inherit;background:none;border:none;cursor:pointer;color:inhe
   transition:transform var(--ts);
 }
 .nav-logo:hover::after{transform:scaleX(1)}
-.nav-logo .dot{
-  width:7px;height:7px;border-radius:50%;
-  background:var(--acc);box-shadow:0 0 10px var(--acc), 0 0 4px var(--acc);
-  animation:pulse 2.4s ease-in-out infinite;
+.nav-code{
+  font-family:var(--mono);
+  font-size:15px;
+  font-weight:500;
+  letter-spacing:-2px;
+  line-height:1;
+  background:linear-gradient(110deg,var(--blue) 10%,var(--acc) 90%);
+  -webkit-background-clip:text;
+  background-clip:text;
+  color:transparent;
 }
-@keyframes pulse{0%,100%{opacity:.5;transform:scale(1)}50%{opacity:1;transform:scale(1.15)}}
 .nav-links{
   display:flex;gap:18px;font-family:var(--mono);font-size:13px;
   align-items:center;
@@ -199,11 +205,30 @@ button{font-family:inherit;background:none;border:none;cursor:pointer;color:inhe
   display:none;position:fixed;top:57px;left:0;right:0;z-index:39;
   background:rgba(22,26,40,.98);backdrop-filter:blur(14px);
   border-bottom:1px solid var(--line);flex-direction:column;
+  padding:8px 20px 12px;
 }
 .nav-mob.open{display:flex;animation:fadeIn .2s ease}
-.nav-mob a{padding:15px 32px;font-family:var(--mono);font-size:13px;color:var(--ink-dim);border-bottom:1px solid var(--line)}
-.nav-mob a:last-child{border-bottom:none}
+.nav-mob a{
+  width:max-content;
+  padding:10px 0;
+  font-family:var(--mono);
+  font-size:12px;
+  color:var(--ink-dim);
+  border-bottom:1px solid transparent;
+}
 .nav-mob a:hover{color:var(--acc)}
+.nav-mob a.active{color:var(--acc);border-bottom-color:var(--acc)}
+.nav-mob .github-link{
+  width:100%;
+  margin-top:6px;
+  padding:14px 0 4px;
+  border:0;
+  border-top:1px solid var(--line);
+  border-radius:0;
+  background:none;
+  box-shadow:none;
+}
+.nav-mob .github-link:hover{transform:none;background:none;box-shadow:none}
 
 /* ─── LAYOUT ──────────────────────────────────────── */
 main{padding-top:57px;position:relative;z-index:1;}
@@ -1072,6 +1097,8 @@ footer{
 /* ─── RESPONSIVE ──────────────────────────────────── */
 @media (max-width:720px){
   .nav-inner{padding:12px 20px}
+  .nav-logo{font-size:16px}
+  .nav-code{font-size:14px}
   .nav-links a{display:none}
   .nav-ham{display:block}
   .wrap{padding:0 20px}
@@ -1113,8 +1140,9 @@ footer{
 <!-- NAV -->
 <nav class="nav">
   <div class="nav-inner">
-    <a class="nav-logo plain" href="#hero">
-      ahmet.ilhan
+    <a class="nav-logo plain" href="#hero" aria-label="Zur Startseite">
+      <span class="nav-code" aria-hidden="true">&lt;/&gt;</span>
+      <span>Ahmet</span>
     </a>
     <div class="nav-links">
       <a href="#about" class="nav-link">über mich</a>
@@ -1134,7 +1162,6 @@ footer{
   <a href="#opensource">open source</a>
   <a href="#learning">lernen</a>
   <a href="https://github.com/ahmojo" target="_blank" rel="noopener" class="github-link">GitHub <span class="arr">↗</span></a>
-  <a href="/cdn-cgi/l/email-protection#d6b7bebbb3a2b0b7a4a3bdbfbabeb7b896a6a4b9a2b9b8f8bbb3">kontakt ↗</a>
 </nav>
 
 <canvas id="hero-canvas"></canvas>
@@ -1828,12 +1855,16 @@ function normalizeGithubRepo(value){
 
 /* active nav */
 (function(){
-  const links = [...document.querySelectorAll('.nav-link')];
-  const map = new Map(links.map(a => [a.getAttribute('href').slice(1), a]));
+  const sectionLinks = [...document.querySelectorAll('.nav-link, .nav-mob a[href^="#"]')];
   const io = new IntersectionObserver(entries => {
     entries.forEach(e => {
-      const a = map.get(e.target.id); if (!a) return;
-      if (e.isIntersecting) { links.forEach(l => l.classList.remove('active')); a.classList.add('active'); }
+      if (!e.isIntersecting) return;
+      sectionLinks.forEach(link => {
+        link.classList.toggle(
+          'active',
+          link.getAttribute('href') === `#${e.target.id}`
+        );
+      });
     });
   }, { rootMargin: '-40% 0px -55% 0px' });
   ['about','skills','projects','opensource','learning'].forEach(id => {

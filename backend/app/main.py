@@ -8,6 +8,7 @@ from __future__ import annotations
 
 import asyncio
 import logging
+import re
 from pathlib import Path
 
 from fastapi import Depends, FastAPI, File, HTTPException, Request, UploadFile
@@ -32,6 +33,62 @@ log = logging.getLogger("portfolio")
 
 SITE_ROOT = Path(__file__).resolve().parent.parent.parent
 PUBLIC_FILES = {"index.html", "impressum.html", "datenschutz.html", "og.png"}
+_ANALYTICS_PAGES = {"/", "/index.html", "/impressum.html", "/datenschutz.html"}
+_BROWSER_SIGNATURES = (
+    "chrome/",
+    "crios/",
+    "edg/",
+    "firefox/",
+    "fxios/",
+    "opr/",
+    "safari/",
+)
+_AUTOMATION_PATTERN = re.compile(
+    r"(?:bot|crawler|spider|slurp|headless|lighthouse|pagespeed|"
+    r"curl|wget|python-requests|httpx|aiohttp|scrapy|okhttp|"
+    r"go-http-client|libwww|zgrab|masscan|nikto|sqlmap)",
+    re.IGNORECASE,
+)
+
+
+def _is_likely_human_page_view(
+    *,
+    method: str,
+    path: str,
+    status_code: int,
+    accept: str,
+    user_agent: str,
+    sec_fetch_dest: str = "",
+    purpose: str = "",
+    do_not_track: str = "",
+    global_privacy_control: str = "",
+    project_slugs: set[str] | None = None,
+) -> bool:
+    """Accept plausible browser navigations without persisting browser metadata."""
+    if method.upper() != "GET" or not 200 <= status_code < 400:
+        return False
+
+    valid_path = path in _ANALYTICS_PAGES
+    if path.startswith("/p/") and path.count("/") == 2:
+        slug = path.removeprefix("/p/")
+        valid_path = bool(slug and slug in (project_slugs or set()))
+    if not valid_path or "text/html" not in accept.lower():
+        return False
+
+    normalized_agent = user_agent.strip().lower()
+    if (
+        not normalized_agent.startswith("mozilla/5.0")
+        or _AUTOMATION_PATTERN.search(normalized_agent)
+        or not any(token in normalized_agent for token in _BROWSER_SIGNATURES)
+    ):
+        return False
+    if sec_fetch_dest and sec_fetch_dest.lower() != "document":
+        return False
+    if purpose.lower() in {"prefetch", "prerender"}:
+        return False
+    if do_not_track == "1" or global_privacy_control == "1":
+        return False
+    return True
 
 
 def _silence_connection_reset(loop, context):
@@ -111,12 +168,27 @@ def create_app() -> FastAPI:
         response = await call_next(request)
         try:
             path = request.url.path
-            if (
-                path.startswith("/api")
-                or path.startswith("/vids")
-                or path.startswith("/new_image")
-                or path.startswith("/admin")
-                or "." in path.rsplit("/", 1)[-1]
+            project_slugs: set[str] = set()
+            if path.startswith("/p/"):
+                project_slugs = {
+                    item.get("slug", "")
+                    for item in load_content().get("projects", [])
+                    if item.get("slug")
+                }
+            if not _is_likely_human_page_view(
+                method=request.method,
+                path=path,
+                status_code=response.status_code,
+                accept=request.headers.get("accept", ""),
+                user_agent=request.headers.get("user-agent", ""),
+                sec_fetch_dest=request.headers.get("sec-fetch-dest", ""),
+                purpose=(
+                    request.headers.get("sec-purpose", "")
+                    or request.headers.get("purpose", "")
+                ),
+                do_not_track=request.headers.get("dnt", ""),
+                global_privacy_control=request.headers.get("sec-gpc", ""),
+                project_slugs=project_slugs,
             ):
                 return response
             peer_ip = request.client.host if request.client else ""

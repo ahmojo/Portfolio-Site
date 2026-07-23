@@ -3,16 +3,16 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<meta name="description" content="Ahmet Faruk Ilhan - IMS-Schüler aus dem Aargau mit Fokus auf Backend-Entwicklung (Python, C#, FastAPI). Projekte, Boot.dev-Zertifikate und ein selbst gehosteter Backend-Stack." />
+<meta name="description" content="Ahmet Faruk Ilhan - IMS-Schüler aus dem Aargau mit Fokus auf Backend-Entwicklung (Python, C#, FastAPI). Projekte, Boot.dev-Zertifikate und ein eigener Backend-Stack. Deployed on a self-managed Oracle Cloud VM." />
 <link rel="canonical" href="https://ahmet-portfolio.ch/" />
 <meta property="og:type" content="website" />
 <meta property="og:url" content="https://ahmet-portfolio.ch/" />
 <meta property="og:title" content="Ahmet Faruk Ilhan - Backend & IMS" />
-<meta property="og:description" content="IMS-Schüler aus dem Aargau, Fokus Backend. Projekte, Boot.dev-Zertifikate und ein selbst gehosteter FastAPI-Stack." />
+<meta property="og:description" content="IMS-Schüler aus dem Aargau, Fokus Backend. Projekte, Boot.dev-Zertifikate und ein FastAPI-Stack. Deployed on a self-managed Oracle Cloud VM." />
 <meta property="og:image" content="https://ahmet-portfolio.ch/og.png?v=20260705" />
 <meta name="twitter:card" content="summary_large_image" />
 <meta name="twitter:title" content="Ahmet Faruk Ilhan - Backend & IMS" />
-<meta name="twitter:description" content="IMS-Schüler aus dem Aargau, Fokus Backend. Projekte und ein selbst gehosteter FastAPI-Stack." />
+<meta name="twitter:description" content="IMS-Schüler aus dem Aargau, Fokus Backend. Projekte und ein FastAPI-Stack. Deployed on a self-managed Oracle Cloud VM." />
 <meta name="twitter:image" content="https://ahmet-portfolio.ch/og.png?v=20260705" />
 <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><circle cx='16' cy='16' r='9' fill='%236de6a2'/></svg>" />
 <title>Ahmet Faruk Ilhan · Backend · IMS</title>
@@ -811,8 +811,12 @@ footer{
   transition:border-color var(--t),background var(--t),color var(--t);
 }
 .gh-meta .chip:hover{border-color:var(--line-2);background:rgba(255,255,255,.04)}
+.gh-meta a.chip{color:inherit;text-decoration:none;cursor:pointer}
+.gh-meta a.chip:hover{border-color:var(--blue);color:var(--ink)}
+.gh-meta a.chip:focus-visible{outline:2px solid var(--acc);outline-offset:2px}
 .gh-meta .ic{opacity:.85}
 .gh-meta .stars{color:var(--amber)}
+.gh-meta .forks{color:var(--blue)}
 .gh-meta .lang{color:var(--blue)}
 .gh-meta .upd{color:var(--ink-mute)}
 .gh-meta.empty{opacity:.5}
@@ -1201,7 +1205,7 @@ footer{
           <div class="gh-meta empty" data-repo="ahmojo/Badenhackt_KMU_Trifft_KI"><span class="gh-skel"></span></div>
         </div>
         <div class="feat-media">
-          <video src="vids/video.mp4" controls muted playsinline preload="none" onerror="this.style.display='none';this.parentElement.insertAdjacentHTML('beforeend','<div style=&quot;width:100%;height:100%;display:flex;align-items:center;justify-content:center;color:var(--ink-mute);font-family:var(--mono);font-size:11px;background:repeating-linear-gradient(45deg,transparent 0 10px,rgba(255,255,255,.02) 10px 20px)&quot;>Demo-Video folgt</div>')"></video>
+          <video src="vids/video.mp4" controls muted playsinline preload="metadata" onloadedmetadata="if(this.duration){this.currentTime=Math.min(0.05,this.duration/2)}" onerror="this.style.display='none';this.parentElement.insertAdjacentHTML('beforeend','<div style=&quot;width:100%;height:100%;display:flex;align-items:center;justify-content:center;color:var(--ink-mute);font-family:var(--mono);font-size:11px;background:repeating-linear-gradient(45deg,transparent 0 10px,rgba(255,255,255,.02) 10px 20px)&quot;>Demo-Video folgt</div>')"></video>
         </div>
         <div class="proj-actions">
           <a href="https://github.com/ahmojo/Badenhackt_KMU_Trifft_KI" target="_blank" rel="noopener" class="github-link">GitHub <span class="arr">↗</span></a>
@@ -1284,7 +1288,7 @@ footer{
       </div>
 
       <div class="ops-strip" id="uptime-panel" data-stagger>
-        <span class="ops-title">self hosted · Oracle VM mit Docker</span>
+        <span class="ops-title">Deployed on a self-managed Oracle Cloud VM</span>
         <a class="ops-link" href="https://stats.uptimerobot.com/PFy2MRBznP" target="_blank" rel="noopener">status ↗</a>
       </div>
 
@@ -1435,6 +1439,16 @@ function timeAgo(iso){
   return d.toLocaleDateString();
 }
 
+function normalizeGithubRepo(value){
+  return String(value||'')
+    .trim()
+    .replace(/^https?:\/\/(?:www\.)?github\.com\//i,'')
+    .replace(/[?#].*$/,'')
+    .replace(/\.git\/?$/i,'')
+    .replace(/^\/+|\/+$/g,'')
+    .split('/').slice(0,2).join('/');
+}
+
 /* ─── live project metadata ───────────────────────── */
 (function(){
   function fill(slot, p){
@@ -1444,7 +1458,14 @@ function timeAgo(iso){
       return;
     }
     const chips = [];
-    chips.push(`<span class="chip"><span class="ic">★</span><span class="stars">${p.stars ?? 0}</span></span>`);
+    const repo = normalizeGithubRepo(p.repo || slot.dataset.repo);
+    const stars = Number(p.stars) || 0;
+    const forks = Number(p.forks) || 0;
+    if(repo && stars > 0){
+      const base = `https://github.com/${escapeHtml(repo)}`;
+      chips.push(`<a class="chip" href="${base}/stargazers" target="_blank" rel="noopener" aria-label="${stars} GitHub stars ansehen"><span class="ic">★</span><span class="stars">${stars}</span></a>`);
+      chips.push(`<a class="chip" href="${base}/forks" target="_blank" rel="noopener" aria-label="${forks} GitHub forks ansehen"><span class="ic">⑂</span><span class="forks">${forks}</span></a>`);
+    }
     if(p.language) chips.push(`<span class="chip"><span class="lang">${escapeHtml(p.language)}</span></span>`);
     if(p.updated_at) chips.push(`<span class="chip"><span class="upd">updated ${timeAgo(p.updated_at)}</span></span>`);
     slot.className = 'gh-meta';
@@ -1483,7 +1504,7 @@ function timeAgo(iso){
   }, 1200);
 })();
 
-/* uptime / self-hosted status */
+/* deployment / uptime status */
 (function(){
   const panel = document.getElementById('uptime-panel');
   if(!panel) return;
@@ -1977,13 +1998,14 @@ function timeAgo(iso){
     wrap.innerHTML = items.map((p,idx)=>{
       const num = String(idx+1).padStart(2,'0');
       const badges = (p.badges||[]).filter(b=>b.label).map(b=>`<span class="proj-badge ${esc(b.variant||'')}">${esc(b.label)}</span>`).join('');
-      const ghLink = p.repo ? `<a href="https://github.com/${esc(p.repo)}" target="_blank" rel="noopener" class="github-link">GitHub <span class="arr">↗</span></a>` : '';
-      const meta = p.repo ? `<div class="gh-meta empty" data-repo="${esc(p.repo)}"><span class="gh-skel"></span></div>` : '';
+      const repo = normalizeGithubRepo(p.repo);
+      const ghLink = repo ? `<a href="https://github.com/${esc(repo)}" target="_blank" rel="noopener" class="github-link">GitHub <span class="arr">↗</span></a>` : '';
+      const meta = repo ? `<div class="gh-meta empty" data-repo="${esc(repo)}"><span class="gh-skel"></span></div>` : '';
       // deep-dive link shown when the project has a slug + a markdown writeup
       const deepLink = (p.slug && p.content && p.content.trim())
         ? `<a href="/p/${esc(p.slug)}" class="proj-deep">read more <span class="arr">→</span></a>` : '';
       if(p.featured){
-        const media = p.media ? `<div class="feat-media"><video src="${esc(p.media)}" controls muted playsinline preload="none"></video></div>` : '';
+        const media = p.media ? `<div class="feat-media"><video src="${esc(p.media)}" controls muted playsinline preload="metadata" onloadedmetadata="if(this.duration){this.currentTime=Math.min(0.05,this.duration/2)}"></video></div>` : '';
         return `<article class="proj feat" data-stagger>
           <div class="proj-idx">${num}</div>
           <div class="proj-main">

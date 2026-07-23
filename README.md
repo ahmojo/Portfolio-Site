@@ -1,24 +1,26 @@
 # Portfolio Site
 
-Source code for my personal portfolio site: <https://ahmet-portfolio.ch>.
+Architecture of [ahmet-portfolio.ch](https://ahmet-portfolio.ch):
 
-The project contains:
+```text
+Browser
+   |
+Cloudflare (DNS, HTTPS, CDN)
+   |
+Oracle Cloud VM
+   |
+Docker Compose
+   |
+FastAPI
+   |-- static portfolio
+   |-- admin panel
+   |-- content, project, stats and uptime APIs
+   `-- SQLite
 
-- a static HTML/CSS/JavaScript frontend;
-- a FastAPI backend with SQLite persistence;
-- an admin panel for editing site content;
-- Docker Compose 
-
-Placeholder folders are kept for media paths so Docker builds still have the
-expected directory structure.
-
-## Local development
-
-```bash
-cd backend
-cp .env.example .env
-# edit .env values before any public deployment
-docker compose up --build
+FastAPI --> GitHub API
+FastAPI --> UptimeRobot API
 ```
 
-For more backend details, see [backend/README.md](backend/README.md).
+The public frontend and admin panel use the FastAPI API on the same origin.
+SQLite stores editable content and privacy-reduced first-party analytics on the
+persistent VM volume.

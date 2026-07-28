@@ -1125,9 +1125,10 @@ footer{
   .proj.feat .feat-media{grid-column:2}
   .oss-grid{grid-template-columns:1fr}
   .oss-card{min-height:0}
-  .ops-strip{grid-template-columns:1fr;align-items:start}
+  .ops-strip{flex-direction:column;align-items:stretch}
+  .ops-title{white-space:normal;overflow-wrap:anywhere}
   .ops-metric{justify-content:space-between}
-  .ops-link{width:max-content}
+  .ops-link{width:max-content;max-width:100%}
   .cert-grid{grid-template-columns:1fr;gap:14px}
   .learn-projects{grid-template-columns:1fr}
   .cert-card img{aspect-ratio:16/9}

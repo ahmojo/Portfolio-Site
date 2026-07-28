@@ -35,6 +35,14 @@ class Settings(BaseSettings):
     # --- github ---
     github_user: str = "ahmojo"
     github_token: str = ""  # optional, raises rate limit from 60 -> 5000/hr
+    open_source_excluded_owners: list[str] = [
+        "AleksZyro",
+        "BotondCsereklye",
+        "Momik-jpg",
+        "Geldflamme365",
+        "mikepro100223",
+    ]
+    open_source_ttl: int = 3600
     projects: dict[str, str] = {
         "Regal-Erkennung für KMU": "ahmojo/Badenhackt_KMU_Trifft_KI",
         "Codex Claude Transfer": "ahmojo/codex-claude-transfer",

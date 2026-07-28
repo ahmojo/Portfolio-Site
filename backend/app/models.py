@@ -122,6 +122,7 @@ class OpenSourceItem(BaseModel):
     title: str = Field("", max_length=120, strip_whitespace=True)
     desc: str = Field("", max_length=280, strip_whitespace=True)
     tech: str = Field("", max_length=100, strip_whitespace=True)
+    synced: bool = False
 
 
 class LearnItem(BaseModel):
@@ -153,3 +154,4 @@ class SiteContent(BaseModel):
     )
     learning: list[LearnItem] = []
     theme: ThemeContent = ThemeContent()
+    open_source_hidden: list[str] = Field(default_factory=list, max_length=500)

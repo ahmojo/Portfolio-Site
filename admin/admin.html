@@ -289,7 +289,7 @@ input[type=color]{width:44px;height:34px;border:1px solid var(--line-2);border-r
       <!-- OPEN SOURCE -->
       <div class="panel-section" data-section="opensource">
         <h2 class="field-title">Open Source</h2>
-        <p class="field-desc">// merged pull requests. every three cards start a new public row.</p>
+        <p class="field-desc">// GitHub adds merged PRs automatically; titles, descriptions, labels, order and visibility stay editable here.</p>
         <div id="opensource-list"></div>
         <button class="btn" id="add-opensource" style="margin-top:10px">+ add pull request</button>
       </div>
@@ -388,6 +388,17 @@ function normalizeGithubRepo(value){
     .replace(/[?#].*$/,'').replace(/\.git\/?$/i,'')
     .replace(/^\/+|\/+$/g,'').split('/').slice(0,2).join('/');
 }
+function openSourceKey(item){
+  const repo=normalizeGithubRepo(item?.repo).toLowerCase();
+  const pr=Number.parseInt(item?.pr,10);
+  return repo.split('/').length===2&&Number.isInteger(pr)&&pr>0?`${repo}#${pr}`:'';
+}
+function unhideOpenSource(item){
+  const key=openSourceKey(item);
+  if(!key)return;
+  content.open_source_hidden=(content.open_source_hidden||[]).filter(x=>String(x).toLowerCase()!==key);
+}
+
 
 let toastT;
 function toast(msg,kind){
@@ -457,6 +468,9 @@ async function showApp(){
     if(!Array.isArray(content.open_source)){
       content.open_source=DEFAULT_OPEN_SOURCE.map(item=>({...item}));
     }
+    if(!Array.isArray(content.open_source_hidden)){
+      content.open_source_hidden=[];
+    }
     renderAll();
     $('#loading').style.display='none';
     $('#app').classList.add('show');
@@ -503,10 +517,14 @@ function itemControls(i,arr,onChange){
     <button class="icon-btn del" data-del title="delete">×</button>
   </div>`;
 }
-function bindItemControls(el,arr,onChange){
+function bindItemControls(el,arr,onChange,onDelete){
   el.querySelector('[data-up]')?.addEventListener('click',()=>{const i=+el.dataset.i;if(i>0){moveItem(arr,i,-1);onChange()}});
   el.querySelector('[data-down]')?.addEventListener('click',()=>{const i=+el.dataset.i;if(i<arr.length-1){moveItem(arr,i,1);onChange()}});
-  el.querySelector('[data-del]')?.addEventListener('click',()=>{arr.splice(+el.dataset.i,1);onChange()});
+  el.querySelector('[data-del]')?.addEventListener('click',()=>{
+    const i=+el.dataset.i;
+    if(onDelete)onDelete(arr[i]);
+    arr.splice(i,1);onChange();
+  });
 }
 
 /* ───────── HERO ───────── */
@@ -668,7 +686,7 @@ function renderOpenSource(){
   const wrap=$('#opensource-list');wrap.innerHTML='';
   content.open_source.forEach((item,i)=>{
     const f=document.createElement('div');f.className='item';f.dataset.i=i;
-    f.innerHTML=`<div class="item-head"><span class="idx">PR ${i+1}</span>${itemControls(i,content.open_source,renderOpenSource)}</div>
+    f.innerHTML=`<div class="item-head"><span class="idx">PR ${i+1}${item.synced?' &middot; GitHub':''}</span>${itemControls(i,content.open_source,renderOpenSource)}</div>
       <div class="field-row r2">
         <div class="field"><label>GitHub repo (owner/name)</label><input type="text" data-k="repo" placeholder="owner/repository"></div>
         <div class="field"><label>Pull request number</label><input type="number" min="1" step="1" data-k="pr"></div>
@@ -681,23 +699,36 @@ function renderOpenSource(){
     f.querySelector('[data-k="title"]').value=item.title||'';
     f.querySelector('[data-k="desc"]').value=item.desc||'';
     f.querySelector('[data-k="tech"]').value=item.tech||'';
+    if(item.synced){
+      const identityTitle='Synced from GitHub; delete this card and add a manual one to change its identity.';
+      f.querySelector('[data-k="repo"]').readOnly=true;
+      f.querySelector('[data-k="pr"]').readOnly=true;
+      f.querySelector('[data-k="repo"]').title=identityTitle;
+      f.querySelector('[data-k="pr"]').title=identityTitle;
+    }
 
     f.querySelector('[data-k="repo"]').addEventListener('input',e=>{content.open_source[i].repo=e.target.value;dirty=true});
     f.querySelector('[data-k="repo"]').addEventListener('blur',e=>{
       const repo=normalizeGithubRepo(e.target.value);
-      e.target.value=repo;content.open_source[i].repo=repo;dirty=true;
+      e.target.value=repo;content.open_source[i].repo=repo;unhideOpenSource(content.open_source[i]);dirty=true;
     });
-    f.querySelector('[data-k="pr"]').addEventListener('input',e=>{content.open_source[i].pr=Math.max(1,Number.parseInt(e.target.value,10)||1);dirty=true});
+    f.querySelector('[data-k="pr"]').addEventListener('input',e=>{content.open_source[i].pr=Math.max(1,Number.parseInt(e.target.value,10)||1);unhideOpenSource(content.open_source[i]);dirty=true});
     f.querySelector('[data-k="title"]').addEventListener('input',e=>{content.open_source[i].title=e.target.value;dirty=true});
     f.querySelector('[data-k="desc"]').addEventListener('input',e=>{content.open_source[i].desc=e.target.value;dirty=true});
     f.querySelector('[data-k="tech"]').addEventListener('input',e=>{content.open_source[i].tech=e.target.value;dirty=true});
 
-    bindItemControls(f,content.open_source,()=>{dirty=true;renderOpenSource()});
+    bindItemControls(f,content.open_source,()=>{dirty=true;renderOpenSource()},deleted=>{
+      if(!deleted?.synced)return;
+      const key=openSourceKey(deleted);
+      if(key&&!(content.open_source_hidden||[]).some(x=>String(x).toLowerCase()===key)){
+        content.open_source_hidden.push(key);
+      }
+    });
     wrap.appendChild(f);
   });
 }
 $('#add-opensource').addEventListener('click',()=>{
-  content.open_source.push({repo:'',pr:1,title:'New contribution',desc:'',tech:''});
+  content.open_source.push({repo:'',pr:1,title:'New contribution',desc:'',tech:'',synced:false});
   dirty=true;renderOpenSource();
 });
 

@@ -49,6 +49,24 @@ class SiteContentOpenSourceTests(unittest.TestCase):
                 }
             )
 
+    def test_sync_metadata_and_hidden_keys_are_preserved(self):
+        content = SiteContent.model_validate(
+            {
+                "open_source": [
+                    {
+                        "repo": "example/repo",
+                        "pr": 42,
+                        "title": "Editable",
+                        "synced": True,
+                    }
+                ],
+                "open_source_hidden": ["example/hidden#7"],
+            }
+        )
+
+        self.assertTrue(content.open_source[0].synced)
+        self.assertEqual(content.open_source_hidden, ["example/hidden#7"])
+
 
 if __name__ == "__main__":
     unittest.main()

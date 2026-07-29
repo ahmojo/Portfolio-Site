@@ -21,6 +21,15 @@ class OpenSourceFormattingTests(unittest.TestCase):
             "Restore scopes before fallback",
         )
 
+    def test_title_is_limited_for_compact_cards(self):
+        result = short_title(
+            "fix(parser): preserve a very long technical behavior description "
+            "without overflowing the contribution card"
+        )
+
+        self.assertLessEqual(len(result), 64)
+        self.assertTrue(result.endswith("\u2026"))
+
     def test_summary_is_preferred_over_checklists_and_code(self):
         body = """
 ## Summary
@@ -37,6 +46,23 @@ cross-format conversions.
             "Fix explicit deserialization of TOML datetimes without changing generic cross-format conversions.",
         )
 
+    def test_only_first_summary_sentence_is_used(self):
+        body = """
+## Summary
+
+Fix explicit deserialization of TOML datetimes from `toml::Value` without
+changing generic cross-format conversions. `toml::value::Datetime` asks Serde
+for TOML's private datetime struct and the legacy deserializer forwards it.
+"""
+
+        self.assertEqual(
+            short_description(body, "fix(toml): preserve datetimes"),
+            (
+                "Fix explicit deserialization of TOML datetimes from "
+                "toml::Value without changing generic cross-format conversions."
+            ),
+        )
+
     def test_solution_is_used_when_description_only_references_an_issue(self):
         body = """
 # Description
@@ -50,6 +76,58 @@ This change keeps literal paths separate from glob-safe matching paths.
         self.assertEqual(
             short_description(body, "fix: preserve bracketed names"),
             "This change keeps literal paths separate from glob-safe matching paths.",
+        )
+
+    def test_bom_does_not_hide_summary_heading(self):
+        body = (
+            "\ufeff## Summary\n\nFixes #3170 by allowing the CSS transparent keyword."
+        )
+
+        self.assertEqual(
+            short_description(body, "Allow transparent colors"),
+            "Fixes #3170 by allowing the CSS transparent keyword.",
+        )
+
+    def test_change_sentence_is_preferred_over_problem_statement(self):
+        body = """
+## Description
+
+Malformed interpolations are first attempted as full cell paths.
+
+This restores the captured scope before the interpolation fallback.
+"""
+
+        self.assertEqual(
+            short_description(body, "Restore interpolation scopes"),
+            "This restores the captured scope before the interpolation fallback.",
+        )
+
+    def test_user_facing_change_is_preferred_over_problem_description(self):
+        body = """
+## Description
+
+Malformed interpolations are first attempted as full cell paths.
+
+## User-Facing Changes
+
+Command definitions now persist across REPL entries.
+"""
+
+        self.assertEqual(
+            short_description(body, "Restore interpolation scopes"),
+            "Command definitions now persist across REPL entries.",
+        )
+
+    def test_trailing_colon_becomes_period(self):
+        body = """
+## Solution
+
+- This change keeps two representations of named catalog paths:
+"""
+
+        self.assertEqual(
+            short_description(body, "Preserve bracketed names"),
+            "This change keeps two representations of named catalog paths.",
         )
 
     def test_technology_uses_language_and_useful_label(self):

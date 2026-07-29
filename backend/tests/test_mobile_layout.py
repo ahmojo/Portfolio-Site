@@ -14,3 +14,9 @@ def test_mobile_uptime_strip_contains_status_without_horizontal_overflow():
         "overflow-wrap:anywhere;line-height:1.45}"
     ) in index_html
     assert ".ops-link{width:auto;max-width:100%;justify-self:end}" in index_html
+
+
+def test_open_source_descriptions_are_visually_limited():
+    index_html = (Path(__file__).parents[2] / "index.html").read_text(encoding="utf-8")
+
+    assert "-webkit-line-clamp:4" in index_html

@@ -16,6 +16,14 @@ log = logging.getLogger("portfolio.open_source")
 
 _GH_API = "https://api.github.com"
 _MAX_SEARCH_PAGES = 10
+_TITLE_LIMIT = 64
+_DESCRIPTION_LIMIT = 150
+_CHANGE_DESCRIPTION_RE = re.compile(
+    r"^(?:add|allow|clarif|correct|document|enable|ensure|fix|handle|"
+    r"improv|keep|preserv|prevent|remov|restor|support|this\b|updat|use\b)",
+    re.IGNORECASE,
+)
+
 _TITLE_PREFIX_RE = re.compile(
     r"^(?:build|chore|ci|docs|feat|fix|perf|refactor|revert|style|test)"
     r"(?:\([^)]+\))?!?:\s*",
@@ -31,7 +39,14 @@ _CODE_BLOCK_RE = re.compile(r"```.*?```", re.DOTALL)
 _HEADING_RE = re.compile(r"^\s{0,3}#{1,6}\s+(.+?)\s*$")
 _BULLET_RE = re.compile(r"^\s*(?:[-*+]|\d+[.)])\s+")
 _CHECKBOX_RE = re.compile(r"^\s*[-*+]\s+\[[ xX]\]\s+")
-_PREFERRED_SECTIONS = ("summary", "description", "solution", "why", "what changed")
+_PREFERRED_SECTIONS = (
+    "summary",
+    "user-facing changes",
+    "description",
+    "solution",
+    "why",
+    "what changed",
+)
 _IGNORED_LABEL_PARTS = {
     "approved",
     "backport",
@@ -88,7 +103,30 @@ def short_title(title: str) -> str:
     cleaned = cleaned or html.unescape(title or "").strip() or "Merged contribution"
     if cleaned and cleaned[0].islower():
         cleaned = cleaned[0].upper() + cleaned[1:]
-    return _shorten(cleaned, 120)
+    return _shorten(cleaned, _TITLE_LIMIT)
+
+
+def _first_sentence(value: str) -> str:
+    value = re.sub(r"\s+", " ", value).strip()
+    if not value:
+        return ""
+    sentence = re.split(
+        r"(?<=[.!?])\s+",
+        value,
+        maxsplit=1,
+    )[0]
+    return sentence.strip()
+
+
+def _best_candidate(values: list[str]) -> str:
+    sentences = [_first_sentence(value) for value in values]
+    sentences = [sentence for sentence in sentences if sentence]
+    if not sentences:
+        return ""
+    return next(
+        (sentence for sentence in sentences if _CHANGE_DESCRIPTION_RE.match(sentence)),
+        sentences[0],
+    )
 
 
 def _clean_markdown_line(line: str) -> str:
@@ -112,7 +150,7 @@ def _meaningful(line: str) -> bool:
 
 
 def _body_sections(body: str) -> tuple[dict[str, list[str]], list[str]]:
-    text = _HTML_COMMENT_RE.sub("", body or "")
+    text = _HTML_COMMENT_RE.sub("", body or "").lstrip("\ufeff")
     text = _CODE_BLOCK_RE.sub("", text)
     sections: dict[str, list[str]] = {"": []}
     all_lines: list[str] = []
@@ -160,12 +198,13 @@ def short_description(body: str, title: str) -> str:
     if not candidates:
         candidates = all_lines[:2]
 
-    description = " ".join(candidates)
+    description = _best_candidate(candidates)
     if not description:
         description = f"Merged contribution: {short_title(title).rstrip('.')}"
+    description = description.rstrip(" :;,-")
     if description[-1:] not in ".!?":
         description += "."
-    return _shorten(description, 280)
+    return _shorten(description, _DESCRIPTION_LIMIT)
 
 
 def _metadata_tag(raw_name: str) -> str:

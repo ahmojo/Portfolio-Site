@@ -13,6 +13,7 @@ FastAPI + SQLite backend for the portfolio site. Runs **locally**.
 | `/api/auth/logout` | POST | clear session |
 | `/api/auth/me` | GET | `{authenticated}` for the admin UI |
 | `/api/projects` | GET | live GitHub stars / language / last-update per repo (cached 10 min) |
+| `/api/open-source` | GET | merged PRs by the configured user in external repositories (cached 1 hour) |
 | `/api/stats` | GET | GitHub contributions, streaks + yearly heatmap |
 | `/api/uptime` | GET | public deployment status; optionally enriches from UptimeRobot server-side |
 | `/api/guestbook` | GET | recent messages |
@@ -20,7 +21,9 @@ FastAPI + SQLite backend for the portfolio site. Runs **locally**.
 | `/api/now` | GET | current "what I'm doing" status |
 | `/api/now` | PUT | update status `{status, detail, token?}` |
 | `/api/contact` | POST | store + optionally email a contact message `{name, email, message}` |
-
+| `/api/feedback` | POST | anonymous private rating with optional comment |
+| `/api/feedback` | GET | admin-only feedback summary and recent entries |
+| `/api/docs` | — | interactive Swagger UI |
 
 The app **also serves the static site** (index.html, vids/, new_image/) at `/`,
 and the **admin panel** at `/admin`, so once it's running you open
@@ -61,7 +64,7 @@ All settings via env vars (prefix `PORTFOLIO_`), see `.env.example`.
 
 - `PORTFOLIO_GITHUB_USER` / `PORTFOLIO_PROJECTS` — repos shown on the site
 - `PORTFOLIO_GITHUB_TOKEN` — optional PAT, raises rate limit 60→5000/h
-- `PORTFOLIO_OPEN_SOURCE_EXCLUDED_OWNERS` - repository owners omitted from automatic PR discovery
+- `PORTFOLIO_OPEN_SOURCE_EXCLUDED_OWNERS` - repository owners omitted from the merged-PR feed
 - `PORTFOLIO_OPEN_SOURCE_TTL` - merged-PR cache lifetime in seconds (default 3600)
 - `PORTFOLIO_GUESTBOOK_RATE` / `PORTFOLIO_CONTACT_RATE` — per-IP/min limits
 - `PORTFOLIO_NOW_TOKEN` — required in production; protects `PUT /api/now`
@@ -85,7 +88,7 @@ The panel lets you edit, live, with a save button:
 - **Skills** — rows of languages / tools / interests
 - **Projects** — add / remove / reorder projects (title, description, stack, GitHub
   repo, badges, featured flag + media)
-- **Open Source** - edit, reorder, add, or hide automatically discovered merged PRs;
+- **Open Source** — edit, reorder, add, or hide automatically discovered merged PRs;
   title, description, and technology changes remain stored in SQLite
 - **Learning** — courses & projects (link type or certificate-preview type)
 - **Theme** — background / accent / text colors via pickers + particle count slider

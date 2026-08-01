@@ -78,8 +78,7 @@ h1{font-size:clamp(28px,5vw,40px);font-weight:600;letter-spacing:-.025em;line-he
   <div class="loading">loading project…</div>
 </div>
 
-<script>
-function esc(s){return String(s??'').replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]))}
+<script src="../locale.js"></script><script src="../locale-project.js"></script><script src="../locale-project-fixes.js"></script><script>function esc(s){return String(s??'').replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]))}
 
 // minimal markdown -> HTML (headings, lists, code, bold, links, blockquote, hr)
 function mdToHtml(md){
@@ -119,7 +118,7 @@ function render(p){
   const absMedia = (src) => (src && !src.startsWith('http') && !src.startsWith('/')) ? '/' + src : src;
   const media = p.media
     ? `<div class="media">${/\.(mp4|webm)$/i.test(p.media)
-        ? `<video src="${esc(absMedia(p.media))}" controls muted playsinline preload="metadata" onerror="this.parentElement.style.display='none'"></video>`
+        ? `<video src="${esc(absMedia(p.media))}" controls muted playsinline preload="metadata" onloadedmetadata="if(this.duration){this.currentTime=Math.min(0.05,this.duration/2)}" onerror="this.parentElement.style.display='none'"></video>`
         : `<img src="${esc(absMedia(p.media))}" alt="${esc(p.title||'')}" onerror="this.parentElement.style.display='none'" />`}</div>`
     : '';
   const gh = p.repo ? `<a class="gh" href="https://github.com/${esc(p.repo)}" target="_blank" rel="noopener">GitHub ↗</a>` : '';

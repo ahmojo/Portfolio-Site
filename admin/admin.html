@@ -154,6 +154,17 @@ input[type=color]{width:44px;height:34px;border:1px solid var(--line-2);border-r
 .an-row .k,.an-row .v{position:relative;z-index:1}
 .an-recent .an-row{color:var(--ink-mute)}
 .an-recent .an-row .t{color:var(--ink-faint);font-size:10px;flex:0 0 auto}
+
+/* private feedback */
+.fb-list{display:flex;flex-direction:column;gap:8px}
+.fb-row{padding:11px 12px;background:var(--bg);border:1px solid var(--line);border-radius:6px}
+.fb-meta{display:flex;align-items:center;justify-content:space-between;gap:12px;
+  font-family:var(--mono);font-size:10.5px;color:var(--ink-faint);margin-bottom:7px}
+.fb-rating{font-weight:500;text-transform:uppercase;letter-spacing:.6px}
+.fb-rating.positive{color:var(--acc)}
+.fb-rating.negative{color:var(--red)}
+.fb-comment{color:var(--ink-dim);font-size:12.5px;white-space:pre-wrap;overflow-wrap:anywhere}
+.fb-empty{color:var(--ink-faint);font-style:italic}
 @media(max-width:640px){
   .an-stats{grid-template-columns:repeat(2,1fr)}
   .an-stat:nth-child(2){border-right:none}
@@ -224,7 +235,8 @@ input[type=color]{width:44px;height:34px;border:1px solid var(--line-2);border-r
       <button class="tab-btn" data-tab="opensource"><span class="n">05</span> Open Source</button>
       <button class="tab-btn" data-tab="learning"><span class="n">06</span> Learning</button>
       <button class="tab-btn" data-tab="theme"><span class="n">07</span> Theme</button>
-      <button class="tab-btn" data-tab="analytics"><span class="n">08</span> Analytics</button>
+      <button class="tab-btn" data-tab="feedback"><span class="n">08</span> Feedback</button>
+      <button class="tab-btn" data-tab="analytics"><span class="n">09</span> Analytics</button>
     </div>
     <div class="panel">
       <!-- HERO -->
@@ -289,7 +301,7 @@ input[type=color]{width:44px;height:34px;border:1px solid var(--line-2);border-r
       <!-- OPEN SOURCE -->
       <div class="panel-section" data-section="opensource">
         <h2 class="field-title">Open Source</h2>
-        <p class="field-desc">// GitHub adds merged PRs automatically; titles, descriptions, labels, order and visibility stay editable here.</p>
+        <p class="field-desc">// fallback cards used only when the automatic GitHub sync is unavailable.</p>
         <div id="opensource-list"></div>
         <button class="btn" id="add-opensource" style="margin-top:10px">+ add pull request</button>
       </div>
@@ -322,6 +334,22 @@ input[type=color]{width:44px;height:34px;border:1px solid var(--line-2);border-r
             accent <b id="m-acc"></b><br/>
             ink <b id="m-ink"></b>
           </div>
+        </div>
+      </div>
+
+      <!-- FEEDBACK -->
+      <div class="panel-section" data-section="feedback">
+        <h2 class="field-title">Feedback</h2>
+        <p class="field-desc">// private responses, read-only. never shown on the public site.</p>
+        <div class="an-stats">
+          <div class="an-stat"><div class="an-v" id="fb-total">0</div><div class="an-l">total</div></div>
+          <div class="an-stat"><div class="an-v" id="fb-positive">0</div><div class="an-l">positive</div></div>
+          <div class="an-stat"><div class="an-v" id="fb-negative">0</div><div class="an-l">negative</div></div>
+          <div class="an-stat"><div class="an-v" id="fb-ratio">0%</div><div class="an-l">positive ratio</div></div>
+        </div>
+        <div class="field" style="margin-top:22px">
+          <label>Recent feedback</label>
+          <div id="fb-recent" class="fb-list"></div>
         </div>
       </div>
 
@@ -388,17 +416,6 @@ function normalizeGithubRepo(value){
     .replace(/[?#].*$/,'').replace(/\.git\/?$/i,'')
     .replace(/^\/+|\/+$/g,'').split('/').slice(0,2).join('/');
 }
-function openSourceKey(item){
-  const repo=normalizeGithubRepo(item?.repo).toLowerCase();
-  const pr=Number.parseInt(item?.pr,10);
-  return repo.split('/').length===2&&Number.isInteger(pr)&&pr>0?`${repo}#${pr}`:'';
-}
-function unhideOpenSource(item){
-  const key=openSourceKey(item);
-  if(!key)return;
-  content.open_source_hidden=(content.open_source_hidden||[]).filter(x=>String(x).toLowerCase()!==key);
-}
-
 
 let toastT;
 function toast(msg,kind){
@@ -468,9 +485,6 @@ async function showApp(){
     if(!Array.isArray(content.open_source)){
       content.open_source=DEFAULT_OPEN_SOURCE.map(item=>({...item}));
     }
-    if(!Array.isArray(content.open_source_hidden)){
-      content.open_source_hidden=[];
-    }
     renderAll();
     $('#loading').style.display='none';
     $('#app').classList.add('show');
@@ -502,6 +516,7 @@ $$('.tab-btn').forEach(b=>b.addEventListener('click',()=>{
   $('.panel-section[data-section="'+b.dataset.tab+'"]').classList.add('active');
   // analytics loads on demand (fresh data each time you open the tab)
   if(b.dataset.tab==='analytics') loadAnalytics();
+  if(b.dataset.tab==='feedback') loadFeedback();
 }));
 
 /* ───────── generic list editor helpers ───────── */
@@ -517,14 +532,10 @@ function itemControls(i,arr,onChange){
     <button class="icon-btn del" data-del title="delete">×</button>
   </div>`;
 }
-function bindItemControls(el,arr,onChange,onDelete){
+function bindItemControls(el,arr,onChange){
   el.querySelector('[data-up]')?.addEventListener('click',()=>{const i=+el.dataset.i;if(i>0){moveItem(arr,i,-1);onChange()}});
   el.querySelector('[data-down]')?.addEventListener('click',()=>{const i=+el.dataset.i;if(i<arr.length-1){moveItem(arr,i,1);onChange()}});
-  el.querySelector('[data-del]')?.addEventListener('click',()=>{
-    const i=+el.dataset.i;
-    if(onDelete)onDelete(arr[i]);
-    arr.splice(i,1);onChange();
-  });
+  el.querySelector('[data-del]')?.addEventListener('click',()=>{arr.splice(+el.dataset.i,1);onChange()});
 }
 
 /* ───────── HERO ───────── */
@@ -686,7 +697,7 @@ function renderOpenSource(){
   const wrap=$('#opensource-list');wrap.innerHTML='';
   content.open_source.forEach((item,i)=>{
     const f=document.createElement('div');f.className='item';f.dataset.i=i;
-    f.innerHTML=`<div class="item-head"><span class="idx">PR ${i+1}${item.synced?' &middot; GitHub':''}</span>${itemControls(i,content.open_source,renderOpenSource)}</div>
+    f.innerHTML=`<div class="item-head"><span class="idx">PR ${i+1}</span>${itemControls(i,content.open_source,renderOpenSource)}</div>
       <div class="field-row r2">
         <div class="field"><label>GitHub repo (owner/name)</label><input type="text" data-k="repo" placeholder="owner/repository"></div>
         <div class="field"><label>Pull request number</label><input type="number" min="1" step="1" data-k="pr"></div>
@@ -699,36 +710,23 @@ function renderOpenSource(){
     f.querySelector('[data-k="title"]').value=item.title||'';
     f.querySelector('[data-k="desc"]').value=item.desc||'';
     f.querySelector('[data-k="tech"]').value=item.tech||'';
-    if(item.synced){
-      const identityTitle='Synced from GitHub; delete this card and add a manual one to change its identity.';
-      f.querySelector('[data-k="repo"]').readOnly=true;
-      f.querySelector('[data-k="pr"]').readOnly=true;
-      f.querySelector('[data-k="repo"]').title=identityTitle;
-      f.querySelector('[data-k="pr"]').title=identityTitle;
-    }
 
     f.querySelector('[data-k="repo"]').addEventListener('input',e=>{content.open_source[i].repo=e.target.value;dirty=true});
     f.querySelector('[data-k="repo"]').addEventListener('blur',e=>{
       const repo=normalizeGithubRepo(e.target.value);
-      e.target.value=repo;content.open_source[i].repo=repo;unhideOpenSource(content.open_source[i]);dirty=true;
+      e.target.value=repo;content.open_source[i].repo=repo;dirty=true;
     });
-    f.querySelector('[data-k="pr"]').addEventListener('input',e=>{content.open_source[i].pr=Math.max(1,Number.parseInt(e.target.value,10)||1);unhideOpenSource(content.open_source[i]);dirty=true});
+    f.querySelector('[data-k="pr"]').addEventListener('input',e=>{content.open_source[i].pr=Math.max(1,Number.parseInt(e.target.value,10)||1);dirty=true});
     f.querySelector('[data-k="title"]').addEventListener('input',e=>{content.open_source[i].title=e.target.value;dirty=true});
     f.querySelector('[data-k="desc"]').addEventListener('input',e=>{content.open_source[i].desc=e.target.value;dirty=true});
     f.querySelector('[data-k="tech"]').addEventListener('input',e=>{content.open_source[i].tech=e.target.value;dirty=true});
 
-    bindItemControls(f,content.open_source,()=>{dirty=true;renderOpenSource()},deleted=>{
-      if(!deleted?.synced)return;
-      const key=openSourceKey(deleted);
-      if(key&&!(content.open_source_hidden||[]).some(x=>String(x).toLowerCase()===key)){
-        content.open_source_hidden.push(key);
-      }
-    });
+    bindItemControls(f,content.open_source,()=>{dirty=true;renderOpenSource()});
     wrap.appendChild(f);
   });
 }
 $('#add-opensource').addEventListener('click',()=>{
-  content.open_source.push({repo:'',pr:1,title:'New contribution',desc:'',tech:'',synced:false});
+  content.open_source.push({repo:'',pr:1,title:'New contribution',desc:'',tech:''});
   dirty=true;renderOpenSource();
 });
 
@@ -792,6 +790,31 @@ function updateSwatch(){
 $('#theme-particles').addEventListener('input',e=>{content.theme.particles=+e.target.value;$('#particle-val').textContent=e.target.value;dirty=true});
 
 /* ───────── render all + save ───────── */
+/* ───────── private feedback ───────── */
+async function loadFeedback(){
+  try{
+    const d = await api('/api/feedback');
+    $('#fb-total').textContent = d.total || 0;
+    $('#fb-positive').textContent = d.positive || 0;
+    $('#fb-negative').textContent = d.negative || 0;
+    const ratio = Number(d.positive_ratio);
+    $('#fb-ratio').textContent = Number.isFinite(ratio) ? ratio.toFixed(1)+'%' : '0%';
+    $('#fb-recent').innerHTML = (d.recent||[]).map(item=>{
+      const rating = item.rating === 'positive' ? 'positive' : 'negative';
+      const label = rating === 'positive' ? 'positive' : 'negative';
+      const comment = item.comment
+        ? esc(item.comment)
+        : '<span class="fb-empty">no comment</span>';
+      return `<article class="fb-row">
+        <div class="fb-meta"><span class="fb-rating ${rating}">${label}</span><time>${esc(item.created_at||'')}</time></div>
+        <div class="fb-comment">${comment}</div>
+      </article>`;
+    }).join('') || '<div class="an-row"><span class="k" style="color:var(--ink-mute)">no feedback yet</span></div>';
+  }catch(e){
+    $('#fb-recent').innerHTML = '<div class="an-row"><span class="k" style="color:var(--red)">failed: '+esc(e.message)+'</span></div>';
+  }
+}
+
 /* ───────── analytics ───────── */
 async function loadAnalytics(){
   const days = +$('#an-days').value;

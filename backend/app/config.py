@@ -46,6 +46,7 @@ class Settings(BaseSettings):
     projects: dict[str, str] = {
         "Regal-Erkennung für KMU": "ahmojo/Badenhackt_KMU_Trifft_KI",
         "Codex Claude Transfer": "ahmojo/codex-claude-transfer",
+        "Dieses Portfolio": "ahmojo/Portfolio-Site",
         "CLI-Agent mit Tool-Nutzung": "ahmojo/AI_Agent",
         "Machine Learning": "ahmojo/LB-259_machine_learning",
     }
@@ -79,6 +80,17 @@ class Settings(BaseSettings):
         "2c0f:f248::/32",
     ]
 
+    # --- conservative, confirmed-human analytics ---
+    analytics_strict: bool = False
+    analytics_hostname: str = "ahmet-portfolio.ch"
+    analytics_seed_ttl_seconds: int = 300
+    analytics_confirm_rate_limit: int = 8
+    analytics_confirm_rate_window_seconds: int = 60
+    analytics_seed_cookie: str = "portfolio_analytics_seed"
+    analytics_human_cookie: str = "portfolio_human_verified"
+    turnstile_site_key: str = ""
+    turnstile_secret_key: str = ""
+
     # --- "now" endpoint ---
     # Leave empty only for local development.
     now_token: str = ""
@@ -106,6 +118,15 @@ class Settings(BaseSettings):
     @property
     def is_production(self) -> bool:
         return self.env.strip().lower() in {"prod", "production"}
+
+    @property
+    def strict_analytics_ready(self) -> bool:
+        return bool(
+            self.analytics_strict
+            and self.analytics_hostname.strip()
+            and self.turnstile_site_key.strip()
+            and self.turnstile_secret_key.strip()
+        )
 
 
 @lru_cache
@@ -163,4 +184,10 @@ def validate_production_settings() -> None:
         raise RuntimeError(
             "Unsafe production CORS origins. Remove '*'/null origins and use "
             "the real https:// domain only."
+        )
+
+    if settings.analytics_strict and not settings.analytics_hostname.strip():
+        raise RuntimeError(
+            "PORTFOLIO_ANALYTICS_HOSTNAME is required when strict analytics "
+            "is enabled."
         )

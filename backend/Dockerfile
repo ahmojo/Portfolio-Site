@@ -25,6 +25,7 @@ RUN groupadd --system --gid 10001 app \
 # copy backend + the static site + admin panel + deep-dive pages
 COPY backend/ ./backend/
 COPY index.html impressum.html datenschutz.html og.png ./
+COPY *.js ./
 COPY vids/ ./vids/
 COPY new_image/ ./new_image/
 COPY admin/ ./admin/

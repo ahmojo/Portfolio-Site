@@ -48,7 +48,7 @@
 }
 
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
-html{scroll-behavior:smooth}
+html{scroll-behavior:smooth;overflow-x:hidden}
 body{
   background:
     radial-gradient(120% 80% at 80% -10%, rgba(109,230,162,.06), transparent 60%),
@@ -705,6 +705,10 @@ section{padding:80px 0}
   color:var(--ink-dim);
   font-size:13.5px;
   line-height:1.65;
+  display:-webkit-box;
+  -webkit-box-orient:vertical;
+  -webkit-line-clamp:4;
+  overflow:hidden;
 }
 .oss-foot{
   display:flex;
@@ -1179,10 +1183,10 @@ footer{
   .proj.feat .feat-media{grid-column:2}
   .oss-grid{grid-template-columns:1fr}
   .oss-card{min-height:0}
-  .ops-strip{display:grid;grid-template-columns:1fr;align-items:start}
-  .ops-title{white-space:normal}
+  .ops-strip{display:grid;grid-template-columns:minmax(0,1fr) auto;align-items:center;gap:10px;min-height:72px;padding:12px}
+  .ops-title{min-width:0;white-space:normal;overflow-wrap:anywhere;line-height:1.45}
   .ops-metric{justify-content:space-between}
-  .ops-link{width:max-content}
+  .ops-link{width:auto;max-width:100%;justify-self:end}
   .cert-grid{grid-template-columns:1fr;gap:14px}
   .learn-projects{grid-template-columns:1fr}
   .cert-card img{aspect-ratio:16/9}

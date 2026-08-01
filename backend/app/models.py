@@ -2,7 +2,7 @@
 from __future__ import annotations
 
 from datetime import datetime
-from typing import Optional, Union
+from typing import Literal, Optional, Union
 
 from pydantic import BaseModel, Field
 
@@ -33,6 +33,32 @@ class NowIn(BaseModel):
     status: str = Field(..., min_length=1, max_length=80, strip_whitespace=True)
     detail: str = Field("", max_length=280, strip_whitespace=True)
     token: str = ""
+
+
+# ── private feedback ────────────────────────────────────────────────────────
+class FeedbackIn(BaseModel):
+    rating: Literal["positive", "negative"]
+    comment: str = Field("", max_length=1000, strip_whitespace=True)
+    # Honeypot field. It is never stored and is intentionally not shown.
+    website: str = Field("", max_length=120, strip_whitespace=True)
+
+
+class FeedbackSubmitOut(BaseModel):
+    ok: bool = True
+
+
+class FeedbackRecentOut(BaseModel):
+    rating: Literal["positive", "negative"]
+    comment: str = ""
+    created_at: str
+
+
+class FeedbackSummaryOut(BaseModel):
+    total: int = 0
+    positive: int = 0
+    negative: int = 0
+    positive_ratio: float = 0.0
+    recent: list[FeedbackRecentOut] = Field(default_factory=list)
 
 
 # ─── github stats / contributions ─────────────────────────────
@@ -112,6 +138,20 @@ OPEN_SOURCE_DEFAULTS = (
         "title": "Gitignore-API erklärt",
         "desc": "Pfade, Verzeichnisse und Match-Priorität präziser dokumentiert.",
         "tech": "Go · API Docs",
+    },
+    {
+        "repo": "lingui/js-lingui",
+        "pr": 2621,
+        "title": "Bugfix (non-breaking change which fixes an issue)",
+        "desc": "Behebt die Lingui-Extraktion für dynamische Next.js-Routen wie [slug] oder [...params].",
+        "tech": "TypeScript",
+    },
+    {
+        "repo": "toml-rs/toml",
+        "pr": 1194,
+        "title": "Preserve datetimes when deserializing Value",
+        "desc": "Fix explicit deserialization of TOML datetimes from toml::Value without changing generic cross-format conversions.",
+        "tech": "Rust · Toml",
     },
 )
 

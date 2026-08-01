@@ -13,7 +13,13 @@ class SiteContentOpenSourceTests(unittest.TestCase):
 
         self.assertEqual(
             [item.repo for item in content.open_source],
-            ["nushell/nushell", "pygments/pygments", "go-git/go-git"],
+            [
+                "nushell/nushell",
+                "pygments/pygments",
+                "go-git/go-git",
+                "lingui/js-lingui",
+                "toml-rs/toml",
+            ],
         )
 
     def test_custom_fourth_item_is_preserved_for_next_grid_row(self):
@@ -49,6 +55,7 @@ class SiteContentOpenSourceTests(unittest.TestCase):
                 }
             )
 
+
     def test_sync_metadata_and_hidden_keys_are_preserved(self):
         content = SiteContent.model_validate(
             {
@@ -66,7 +73,6 @@ class SiteContentOpenSourceTests(unittest.TestCase):
 
         self.assertTrue(content.open_source[0].synced)
         self.assertEqual(content.open_source_hidden, ["example/hidden#7"])
-
 
 if __name__ == "__main__":
     unittest.main()

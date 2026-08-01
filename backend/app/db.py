@@ -50,7 +50,7 @@ CREATE TABLE IF NOT EXISTS now_state (
 
 -- single-row "current status" seeded on first run
 INSERT OR IGNORE INTO now_state (id, status, detail)
-VALUES (1, 'learning FastAPI', 'building this very backend');
+VALUES (1, 'a webgame', '');
 
 CREATE TABLE IF NOT EXISTS content (
     key         TEXT PRIMARY KEY,
@@ -71,6 +71,14 @@ CREATE INDEX IF NOT EXISTS idx_visits_created ON visits(created_at);
 CREATE INDEX IF NOT EXISTS idx_visits_path ON visits(path);
 CREATE INDEX IF NOT EXISTS idx_visits_token_path_created
     ON visits(ip, path, created_at);
+
+CREATE TABLE IF NOT EXISTS feedback (
+    id         INTEGER PRIMARY KEY AUTOINCREMENT,
+    rating     TEXT    NOT NULL CHECK (rating IN ('positive', 'negative')),
+    comment    TEXT    NOT NULL DEFAULT '',
+    created_at TEXT    NOT NULL DEFAULT (datetime('now'))
+);
+CREATE INDEX IF NOT EXISTS idx_feedback_created ON feedback(created_at);
 """
 
 # Default site content, seeded into the `content` table on first boot.
@@ -85,21 +93,21 @@ DEFAULT_CONTENT = {
         ],
     },
     "now": {
-        "status": "learning FastAPI",
-        "detail": "building this very backend",
+        "status": "a webgame",
+        "detail": "",
     },
     "about": {
         "paragraphs": [
-            "Ich bin <strong>Ahmet</strong>, 17 Jahre alt, aus dem Aargau. Seit der Bezirksschule interessiere ich mich für Informatik - deshalb die <span class=\"hl\">IMS</span>, aktuell im 2. Jahr.",
+            "Ich bin <strong>Ahmet</strong>, 18 Jahre alt, aus dem Aargau. Seit der Bezirksschule interessiere ich mich für Informatik - deshalb die <span class=\"hl\">IMS</span>, aktuell im 3. Jahr.",
             "Mein Schwerpunkt liegt auf <strong>Backend-Entwicklung</strong>. Daneben interessiert mich Cybersecurity - ich lerne, wie Systeme funktionieren und wie man sie sicherer macht.",
             "Neben der Schule bilde ich mich selbständig weiter und lerne auch in meiner Freizeit gerne neue Informatik-Themen, zum Beispiel über Boot.dev. Im <span class=\"hl\">Praktikum im 4. Jahr</span> möchte ich dieses Wissen an echten Aufgaben anwenden und weiter ausbauen.",
         ],
     },
     "stats": [
-        {"value": "2", "suffix": "nd", "label": "Jahr · IMS"},
-        {"value": "4", "label": "Projekte"},
+        {"value": "3", "suffix": "rd", "label": "Jahr · IMS"},
+        {"value": "5", "label": "Projekte"},
         {"value": "6", "label": "Zertifikate · Boot.dev"},
-        {"value": "1", "decorator": "dot", "label": "Hackathon"},
+        {"value": "1", "decorator": "", "label": "Hackathon"},
     ],
     "skills": [
         {"key": "languages", "items": ["Python", "C#", "JavaScript", "HTML/CSS"]},
@@ -135,28 +143,6 @@ DEFAULT_CONTENT = {
             ),
         },
         {
-            "title": "Dieses Portfolio",
-            "desc": "Kein Template - das Frontend spricht mit einem eigenen <b style=\"color:var(--acc)\">FastAPI</b>-Backend: Live-GitHub-Stats, Projekt-Metadaten, ein Admin-Panel zum Bearbeiten der Inhalte und Uptime-Monitoring. Deployed on a self-managed Oracle Cloud VM.",
-            "stack": "Python · FastAPI · SQLite · Docker · Oracle Cloud · Cloudflare",
-            "repo": "",
-            "featured": False,
-            "badges": [{"label": "Full-Stack", "variant": "py"}],
-            "slug": "portfolio",
-            "content": (
-                "## Idee\n"
-                "Die meisten Portfolios sind statisch. Dieses hier ist ein kleines Full-Stack-Projekt: "
-                "Die Inhalte, GitHub-Statistiken und Projekt-Metadaten kommen aus einem eigenen Backend.\n\n"
-                "## Stack\n"
-                "- **FastAPI** liefert Inhalte, GitHub-Stats, Projekt-Metadaten und Uptime aus.\n"
-                "- **SQLite** speichert die editierbaren Inhalte; ein Admin-Panel schreibt sie per API.\n"
-                "- **Docker** auf einer **Oracle-Cloud-VM**, ausgeliefert hinter **Cloudflare**.\n\n"
-                "## Was ich gelernt habe\n"
-                "- Wie man ein FastAPI-Backend strukturiert (Router, Auth, DB-Zugriff).\n"
-                "- HMAC-signierte Session-Cookies und Rate-Limiting fürs Admin-Login.\n"
-                "- Deployment und Betrieb: Docker, Reverse-Proxy, Monitoring.\n"
-            ),
-        },
-        {
             "title": "Codex Claude Transfer",
             "desc": "Ein lokales CLI-Tool (<b style=\"color:var(--acc)\">cct</b>), das Codex- &amp; Claude-Code-Sessions zwischen Maschinen überträgt. Sessions als <code>.codexbundle</code> exportieren, kopieren, importieren - kein Cloud, kein Account, kein Server. Optionaler LAN-Sync.",
             "stack": "Go · Cobra · Indexed State · Local-Only",
@@ -181,6 +167,28 @@ DEFAULT_CONTENT = {
                 "- Optionale Verschlüsselung der Bundles\n"
                 "- Experimenteller LAN-Sync zwischen explizit gepairten Geräten\n\n"
                 "> In Go geschrieben, mit [Cobra](https://github.com/spf13/cobra)."
+            ),
+        },
+        {
+            "title": "Dieses Portfolio",
+            "desc": "Kein Template - das Frontend spricht mit einem eigenen <b style=\"color:var(--acc)\">FastAPI</b>-Backend: Live-GitHub-Stats, Projekt-Metadaten, ein Admin-Panel zum Bearbeiten der Inhalte und Uptime-Monitoring. Deployed on a self-managed Oracle Cloud VM.",
+            "stack": "Python · FastAPI · SQLite · Docker · Oracle Cloud · Cloudflare",
+            "repo": "ahmojo/Portfolio-Site",
+            "featured": False,
+            "badges": [{"label": "Full-Stack", "variant": "py"}],
+            "slug": "portfolio",
+            "content": (
+                "## Idee\n"
+                "Die meisten Portfolios sind statisch. Dieses hier ist ein kleines Full-Stack-Projekt: "
+                "Die Inhalte, GitHub-Statistiken und Projekt-Metadaten kommen aus einem eigenen Backend.\n\n"
+                "## Stack\n"
+                "- **FastAPI** liefert Inhalte, GitHub-Stats, Projekt-Metadaten und Uptime aus.\n"
+                "- **SQLite** speichert die editierbaren Inhalte; ein Admin-Panel schreibt sie per API.\n"
+                "- **Docker** auf einer **Oracle-Cloud-VM**, ausgeliefert hinter **Cloudflare**.\n\n"
+                "## Was ich gelernt habe\n"
+                "- Wie man ein FastAPI-Backend strukturiert (Router, Auth, DB-Zugriff).\n"
+                "- HMAC-signierte Session-Cookies und Rate-Limiting fürs Admin-Login.\n"
+                "- Deployment und Betrieb: Docker, Reverse-Proxy, Monitoring.\n"
             ),
         },
         {
@@ -239,6 +247,7 @@ DEFAULT_CONTENT = {
         },
     ],
     "open_source": [dict(item) for item in OPEN_SOURCE_DEFAULTS],
+    "open_source_hidden": [],
     "learning": [
         {"kind": "Project", "name": "Build an AI Agent", "date": "Apr 2026", "type": "url", "url": "https://github.com/ahmojo/AI_Agent"},
         {"kind": "Course", "name": "Learn Functional Programming in Python", "date": "Apr 22 · 2026", "type": "preview", "src": "new_image/bootdev_certificate.png", "title": "Learn Functional Programming in Python - Certificate"},

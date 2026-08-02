@@ -50,10 +50,7 @@
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
 html{scroll-behavior:smooth;overflow-x:hidden}
 body{
-  background:
-    radial-gradient(120% 80% at 80% -10%, rgba(109,230,162,.06), transparent 60%),
-    radial-gradient(90% 60% at -10% 110%, rgba(125,178,238,.05), transparent 60%),
-    var(--bg);
+  background:var(--bg);
   color:var(--ink);
   font-family:var(--sans);
   font-size:15.5px;
@@ -61,25 +58,6 @@ body{
   overflow-x:hidden;
   -webkit-font-smoothing:antialiased;
   font-feature-settings:"ss01","cv11";
-}
-/* moving ambient grain/aura behind everything */
-body::before{
-  content:'';position:fixed;inset:-20%;z-index:0;pointer-events:none;
-  background:
-    radial-gradient(40% 40% at 30% 30%, rgba(109,230,162,.045), transparent 60%),
-    radial-gradient(35% 35% at 75% 65%, rgba(125,178,238,.04), transparent 60%);
-  filter:blur(40px);
-  animation:aura 22s ease-in-out infinite alternate;
-}
-@keyframes aura{
-  0%{transform:translate3d(0,0,0) scale(1)}
-  100%{transform:translate3d(2%,-2%,0) scale(1.08)}
-}
-/* cursor spotlight (desktop only) */
-.spot{
-  position:fixed;inset:0;z-index:0;pointer-events:none;
-  background:radial-gradient(90px 90px at var(--mx,50%) var(--my,30%), rgba(109,230,162,.08), transparent 70%);
-  transition:background .2s linear;
 }
 a{color:var(--ink);text-decoration:none;transition:color var(--t);border-bottom:1px solid var(--line-2)}
 a:hover{color:var(--acc);border-color:var(--acc)}
@@ -1204,7 +1182,6 @@ footer{
 <body>
 
 <div class="progress" id="progress"></div>
-<div class="spot" id="spot" aria-hidden="true"></div>
 
 <!-- NAV -->
 <nav class="nav">
@@ -2091,19 +2068,6 @@ function normalizeGithubRepo(value){
     if (!ticking){ window.requestAnimationFrame(update); ticking = true; }
   }, { passive: true });
   update();
-})();
-
-/* cursor spotlight */
-(function(){
-  if (RM) return;
-  const spot = document.getElementById('spot');
-  let raf = false, x = window.innerWidth/2, y = window.innerHeight*.3;
-  function apply(){ spot.style.setProperty('--mx', x+'px'); spot.style.setProperty('--my', y+'px'); raf = false; }
-  window.addEventListener('pointermove', e => {
-    x = e.clientX; y = e.clientY;
-    if (!raf){ requestAnimationFrame(apply); raf = true; }
-  }, { passive: true });
-  apply();
 })();
 
 /* active nav */

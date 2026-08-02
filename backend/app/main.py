@@ -530,11 +530,43 @@ def create_app() -> FastAPI:
         return response
 
     @app.get("/api/project/{slug}")
-    def get_project(slug: str):
+    def get_project(slug: str, lang: str = "de"):
         data = load_content()
         for project in data.get("projects", []):
             if project.get("slug") == slug:
-                return project
+                result = dict(project)
+                if lang == "en":
+                    translations = data.get("translations", {})
+                    english = translations.get("en", {}) if isinstance(translations, dict) else {}
+                    english = english if isinstance(english, dict) else {}
+                    translated = next(
+                        (
+                            item
+                            for item in english.get("projects", [])
+                            if item.get("slug") == slug
+                        ),
+                        None,
+                    )
+                    if isinstance(translated, dict):
+                        for field in ("title", "desc", "stack", "content"):
+                            if isinstance(translated.get(field), str):
+                                result[field] = translated[field]
+                        if isinstance(translated.get("badges"), list):
+                            result["badges"] = [
+                                {
+                                    **badge,
+                                    **(
+                                        {"label": translated["badges"][index]["label"]}
+                                        if index < len(translated["badges"])
+                                        and isinstance(translated["badges"][index], dict)
+                                        and isinstance(translated["badges"][index].get("label"), str)
+                                        else {}
+                                    ),
+                                }
+                                for index, badge in enumerate(result.get("badges", []))
+                            ]
+                        result["_localized"] = "en"
+                return result
         return JSONResponse({"detail": "project not found"}, status_code=404)
 
     @app.get("/api/backup", dependencies=[Depends(require_admin)])

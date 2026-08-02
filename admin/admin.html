@@ -51,6 +51,14 @@ a{color:var(--acc);text-decoration:none}
 .topbar .brand{font-size:15px;font-weight:600;display:flex;align-items:center;gap:9px}
 .topbar .brand .dot{width:7px;height:7px;border-radius:50%;background:var(--acc);box-shadow:0 0 8px var(--acc)}
 .topbar .actions{display:flex;gap:10px;align-items:center}
+.editor-locale{display:flex;align-items:center;gap:3px;padding:3px;background:var(--bg);border:1px solid var(--line);border-radius:6px}
+.editor-locale button{font-family:var(--mono);font-size:11px;padding:5px 8px;border:0;border-radius:3px;background:transparent;color:var(--ink-mute);cursor:pointer}
+.editor-locale button:hover{color:var(--ink)}
+.editor-locale button.active{background:rgba(109,230,162,.14);color:var(--acc)}
+.editor-language-note{font-family:var(--mono);font-size:10.5px;color:var(--ink-mute);white-space:nowrap}
+.tab-btn:disabled{cursor:not-allowed;opacity:.42}
+body.editor-en .locale-structural{display:none}
+body.editor-en #add-skill,body.editor-en #add-project,body.editor-en #add-opensource,body.editor-en #add-learning{display:none}
 .btn{font-family:var(--mono);font-size:12px;padding:8px 14px;border-radius:5px;cursor:pointer;
   border:1px solid var(--line-2);background:var(--bg-1);color:var(--ink-dim);
   transition:all .2s;text-decoration:none;display:inline-flex;align-items:center;gap:6px}
@@ -188,6 +196,9 @@ input[type=color]{width:44px;height:34px;border:1px solid var(--line-2);border-r
 @keyframes spin{to{transform:rotate(360deg)}}
 
 @media(max-width:640px){
+  .topbar{padding:12px 16px;gap:10px}
+  .topbar .actions{width:100%;flex-wrap:wrap;gap:8px}
+  .editor-language-note{flex-basis:100%}
   .main{grid-template-columns:1fr}
   .sidebar{flex-direction:row;overflow-x:auto;border-right:none;border-bottom:1px solid var(--line);padding:10px}
   .tab-btn{white-space:nowrap}
@@ -220,6 +231,11 @@ input[type=color]{width:44px;height:34px;border:1px solid var(--line-2);border-r
   <div class="topbar">
     <div class="brand"><span class="dot"></span> Portfolio Admin</div>
     <div class="actions">
+      <span class="editor-language-note" id="editor-language-note">editing German content</span>
+      <div class="editor-locale" role="group" aria-label="Editing language">
+        <button type="button" class="active" data-editor-locale="de" aria-pressed="true">DE</button>
+        <button type="button" data-editor-locale="en" aria-pressed="false">EN</button>
+      </div>
       <a class="btn" href="/" target="_blank">preview ↗</a>
       <a class="btn" href="/api/backup" id="backup-btn" title="download the database (save before deploy/sleep)">backup .db</a>
       <button class="btn btn-primary" id="save-btn">save changes</button>
@@ -396,9 +412,12 @@ input[type=color]{width:44px;height:34px;border:1px solid var(--line-2);border-r
 
 <div id="toast"></div>
 
+<script src="/locale.js?v=20260802-editable-en"></script><script src="/locale-content.js?v=20260802-editable-en"></script>
 <script>
 /* ───────── state ───────── */
+let siteContent = null;
 let content = null;
+let editorLocale = 'de';
 let dirty = false;
 const DEFAULT_OPEN_SOURCE = [
   {repo:'nushell/nushell',pr:18666,title:'Parser-Scope-Leak behoben',desc:'Scope-Verlust bei Interpolation behoben und Regressionstests ergänzt.',tech:'Rust · Parser'},
@@ -416,6 +435,41 @@ function normalizeGithubRepo(value){
     .replace(/[?#].*$/,'').replace(/\.git\/?$/i,'')
     .replace(/^\/+|\/+$/g,'').split('/').slice(0,2).join('/');
 }
+function clone(value){return JSON.parse(JSON.stringify(value));}
+function createEnglishDraft(){
+  const localized = window.PortfolioLocale?.localizeContent
+    ? window.PortfolioLocale.localizeContent(clone(siteContent), 'en')
+    : clone(siteContent);
+  delete localized.translations;
+  delete localized.theme;
+  return localized;
+}
+function setEditorLocale(next){
+  editorLocale = next === 'en' ? 'en' : 'de';
+  if(editorLocale === 'en'){
+    siteContent.translations = siteContent.translations || {};
+    // Keep English copy aligned with the German structure while preserving its text.
+    siteContent.translations.en = createEnglishDraft();
+  }
+  content = editorLocale === 'en' ? siteContent.translations.en : siteContent;
+  document.body.classList.toggle('editor-en', editorLocale === 'en');
+  $('#editor-language-note').textContent = editorLocale === 'en'
+    ? 'editing English copy'
+    : 'editing German content';
+  $$('[data-editor-locale]').forEach(button => {
+    const active = button.dataset.editorLocale === editorLocale;
+    button.classList.toggle('active', active);
+    button.setAttribute('aria-pressed', String(active));
+  });
+  const themeTab = $('.tab-btn[data-tab="theme"]');
+  themeTab.disabled = editorLocale === 'en';
+  themeTab.title = editorLocale === 'en' ? 'Theme is shared across languages' : '';
+  if(editorLocale === 'en' && themeTab.classList.contains('active')) $('.tab-btn[data-tab="hero"]').click();
+  renderAll();
+}
+$$('[data-editor-locale]').forEach(button => button.addEventListener('click',()=>{
+  setEditorLocale(button.dataset.editorLocale);
+}));
 
 let toastT;
 function toast(msg,kind){
@@ -481,10 +535,11 @@ async function showApp(){
   $('#login-wrap').style.display='none';
   $('#loading').style.display='flex';
   try{
-    content=await api('/api/content');
-    if(!Array.isArray(content.open_source)){
-      content.open_source=DEFAULT_OPEN_SOURCE.map(item=>({...item}));
+    siteContent=await api('/api/content');
+    if(!Array.isArray(siteContent.open_source)){
+      siteContent.open_source=DEFAULT_OPEN_SOURCE.map(item=>({...item}));
     }
+    content=siteContent;
     renderAll();
     $('#loading').style.display='none';
     $('#app').classList.add('show');
@@ -526,6 +581,7 @@ function moveItem(arr,i,dir){
   [arr[i],arr[j]]=[arr[j],arr[i]];
 }
 function itemControls(i,arr,onChange){
+  if(editorLocale === 'en') return '';
   return `<div class="item-controls">
     <button class="icon-btn" data-up title="move up">↑</button>
     <button class="icon-btn" data-down title="move down">↓</button>
@@ -550,12 +606,12 @@ function renderPhrases(){
   content.hero.phrases.forEach((p,i)=>{
     const c=document.createElement('span');c.className='chip';
     c.innerHTML=esc(p)+'<span class="x" title="remove">×</span>';
-    c.querySelector('.x').addEventListener('click',()=>{content.hero.phrases.splice(i,1);renderPhrases()});
+    c.querySelector('.x').addEventListener('click',()=>{content.hero.phrases.splice(i,1);dirty=true;renderPhrases()});
     wrap.appendChild(c);
   });
   const add=document.createElement('button');add.className='chip-add';add.textContent='+ phrase';
   add.addEventListener('click',()=>{
-    const v=prompt('new phrase:');if(v&&v.trim()){content.hero.phrases.push(v.trim());renderPhrases()}
+    const v=prompt('new phrase:');if(v&&v.trim()){content.hero.phrases.push(v.trim());dirty=true;renderPhrases()}
   });
   wrap.appendChild(add);
 }
@@ -578,7 +634,7 @@ function renderAbout(){
   });
   const add=document.createElement('button');add.className='btn';add.textContent='+ paragraph';
   add.addEventListener('click',()=>{content.about.paragraphs.push('');renderAbout()});
-  wrap.appendChild(add);
+  if(editorLocale === 'de') wrap.appendChild(add);
 
   // stats
   const sl=$('#stats-list');sl.innerHTML='';
@@ -602,7 +658,7 @@ function renderAbout(){
   });
   const addS=document.createElement('button');addS.className='btn';addS.textContent='+ stat';
   addS.addEventListener('click',()=>{content.stats.push({value:'0',label:''});renderAbout()});
-  sl.appendChild(addS);
+  if(editorLocale === 'de') sl.appendChild(addS);
 
   $('#now-status').value=content.now.status||'';
   $('#now-detail').value=content.now.detail||'';
@@ -628,7 +684,7 @@ function renderSkills(){
     wrap.appendChild(f);
   });
 }
-$('#add-skill').addEventListener('click',()=>{content.skills.push({key:'',items:[]});renderSkills()});
+$('#add-skill').addEventListener('click',()=>{if(editorLocale === 'de'){content.skills.push({key:'',items:[]});renderSkills()}});
 
 /* ───────── PROJECTS ───────── */
 const VARIANTS=[['py','py (blue)'],['hack','hack (red)'],['cv','cv (green)'],['ml','ml (muted)'],['','none']];
@@ -642,15 +698,15 @@ function renderProjects(){
       <div class="field"><label>Description (HTML allowed)</label><textarea rows="2" data-k="desc"></textarea></div>
       <div class="field-row r2">
         <div class="field"><label>Stack</label><input type="text" data-k="stack"></div>
-        <div class="field"><label>GitHub repo (user/name)</label><input type="text" data-k="repo"></div>
+        <div class="field locale-structural"><label>GitHub repo (user/name)</label><input type="text" data-k="repo"></div>
       </div>
       <div class="field-row r3">
-        <div class="field"><label>Featured</label><select data-k="featured"><option value="false">no</option><option value="true">yes</option></select></div>
-        <div class="field"><label>Media (featured)</label><input type="text" data-k="media" placeholder="vids/video.mp4"></div>
+        <div class="field locale-structural"><label>Featured</label><select data-k="featured"><option value="false">no</option><option value="true">yes</option></select></div>
+        <div class="field locale-structural"><label>Media (featured)</label><input type="text" data-k="media" placeholder="vids/video.mp4"></div>
         <div class="field"><label>Badge label</label><input type="text" data-k="badge0label" placeholder="Go · CLI"></div>
       </div>
-      <div class="field"><label>Badge variant</label><select data-k="badge0variant">${VARIANTS.map(v=>`<option value="${v[0]}">${v[1]}</option>`).join('')}</select></div>
-      <div class="field"><label>Slug <span style="color:var(--ink-faint)">(for /p/slug deep-dive page)</span></label><input type="text" data-k="slug" placeholder="my-project"></div>
+      <div class="field locale-structural"><label>Badge variant</label><select data-k="badge0variant">${VARIANTS.map(v=>`<option value="${v[0]}">${v[1]}</option>`).join('')}</select></div>
+      <div class="field locale-structural"><label>Slug <span style="color:var(--ink-faint)">(for /p/slug deep-dive page)</span></label><input type="text" data-k="slug" placeholder="my-project"></div>
       <div class="field">
         <label>Deep-dive writeup <span style="color:var(--ink-faint)">(markdown — empty = no read-more link)</span></label>
         <textarea rows="6" data-k="content" placeholder="## The problem&#10;..."></textarea>
@@ -690,7 +746,7 @@ function renderProjects(){
     wrap.appendChild(f);
   });
 }
-$('#add-project').addEventListener('click',()=>{content.projects.push({title:'New Project',desc:'',stack:'',repo:'',featured:false,badges:[]});renderProjects()});
+$('#add-project').addEventListener('click',()=>{if(editorLocale === 'de'){content.projects.push({title:'New Project',desc:'',stack:'',repo:'',featured:false,badges:[]});renderProjects()}});
 
 /* ───────── OPEN SOURCE ───────── */
 function renderOpenSource(){
@@ -699,8 +755,8 @@ function renderOpenSource(){
     const f=document.createElement('div');f.className='item';f.dataset.i=i;
     f.innerHTML=`<div class="item-head"><span class="idx">PR ${i+1}</span>${itemControls(i,content.open_source,renderOpenSource)}</div>
       <div class="field-row r2">
-        <div class="field"><label>GitHub repo (owner/name)</label><input type="text" data-k="repo" placeholder="owner/repository"></div>
-        <div class="field"><label>Pull request number</label><input type="number" min="1" step="1" data-k="pr"></div>
+        <div class="field locale-structural"><label>GitHub repo (owner/name)</label><input type="text" data-k="repo" placeholder="owner/repository"></div>
+        <div class="field locale-structural"><label>Pull request number</label><input type="number" min="1" step="1" data-k="pr"></div>
       </div>
       <div class="field"><label>Short title</label><input type="text" maxlength="120" data-k="title"></div>
       <div class="field"><label>Short description</label><textarea rows="2" maxlength="280" data-k="desc"></textarea></div>
@@ -726,8 +782,8 @@ function renderOpenSource(){
   });
 }
 $('#add-opensource').addEventListener('click',()=>{
-  content.open_source.push({repo:'',pr:1,title:'New contribution',desc:'',tech:''});
-  dirty=true;renderOpenSource();
+  if(editorLocale === 'de') content.open_source.push({repo:'',pr:1,title:'New contribution',desc:'',tech:''});
+  if(editorLocale === 'de'){dirty=true;renderOpenSource();}
 });
 
 /* ───────── LEARNING ───────── */
@@ -736,14 +792,14 @@ function renderLearning(){
   content.learning.forEach((l,i)=>{
     const f=document.createElement('div');f.className='item';f.dataset.i=i;
     const extra = l.type==='url'
-      ? `<div class="field"><label>URL</label><input type="text" data-k="url" placeholder="https://github.com/..."></div>`
-      : `<div class="field-row r2"><div class="field"><label>Image src</label><input type="text" data-k="src" placeholder="new_image/x.png"></div>
+      ? `<div class="field locale-structural"><label>URL</label><input type="text" data-k="url" placeholder="https://github.com/..."></div>`
+      : `<div class="field-row r2"><div class="field locale-structural"><label>Image src</label><input type="text" data-k="src" placeholder="new_image/x.png"></div>
            <div class="field"><label>Modal title</label><input type="text" data-k="title"></div></div>`;
     f.innerHTML=`<div class="item-head"><span class="idx">${i+1}</span>${itemControls(i,content.learning,renderLearning)}</div>
       <div class="field-row r3">
         <div class="field"><label>Kind</label><select data-k="kind"><option value="Course">Course</option><option value="Project">Project</option></select></div>
         <div class="field"><label>Date</label><input type="text" data-k="date" placeholder="Apr 2026"></div>
-        <div class="field"><label>Type</label><select data-k="type"><option value="url">url (link)</option><option value="preview">preview (cert)</option></select></div>
+        <div class="field locale-structural"><label>Type</label><select data-k="type"><option value="url">url (link)</option><option value="preview">preview (cert)</option></select></div>
       </div>
       <div class="field"><label>Name</label><input type="text" data-k="name"></div>
       <div class="extra">${extra}</div>`;
@@ -768,7 +824,7 @@ function renderLearning(){
     wrap.appendChild(f);
   });
 }
-$('#add-learning').addEventListener('click',()=>{content.learning.push({kind:'Course',name:'New item',date:'',type:'preview',src:'new_image/bootdev_certificate.png',title:'Certificate'});renderLearning()});
+$('#add-learning').addEventListener('click',()=>{if(editorLocale === 'de'){content.learning.push({kind:'Course',name:'New item',date:'',type:'preview',src:'new_image/bootdev_certificate.png',title:'Certificate'});renderLearning()}});
 
 /* ───────── THEME ───────── */
 function renderTheme(){
@@ -882,17 +938,21 @@ function drawChart(perDay){
 }
 $('#an-days').addEventListener('change',loadAnalytics);
 
-function renderAll(){renderHero();renderAbout();renderSkills();renderProjects();renderOpenSource();renderLearning();renderTheme()}
+function renderAll(){renderHero();renderAbout();renderSkills();renderProjects();renderOpenSource();renderLearning();if(editorLocale === 'de') renderTheme()}
 
 $('#save-btn').addEventListener('click',async()=>{
   const btn=$('#save-btn');btn.disabled=true;btn.textContent='saving…';
   try{
-    // clean: drop empty badges, ensure arrays
-    const out=JSON.parse(JSON.stringify(content));
+    // clean: drop empty badges in the default and English copies.
+    const out=clone(siteContent);
     out.projects.forEach(p=>{p.badges=(p.badges||[]).filter(b=>b.label&&b.label.trim())});
-    content=out;
-    const saved=await api('/api/content',{method:'PUT',body:JSON.stringify(content)});
-    content=saved;dirty=false;
+    if(out.translations?.en?.projects){
+      out.translations.en.projects.forEach(p=>{p.badges=(p.badges||[]).filter(b=>b.label&&b.label.trim())});
+    }
+    const saved=await api('/api/content',{method:'PUT',body:JSON.stringify(out)});
+    siteContent=saved;
+    content=editorLocale === 'en' ? siteContent.translations?.en : siteContent;
+    dirty=false;
     toast('saved ✓ changes are live','ok');
   }catch(e){toast('save failed: '+e.message,'err')}
   finally{btn.disabled=false;btn.textContent='save changes'}

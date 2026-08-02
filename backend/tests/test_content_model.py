@@ -74,5 +74,29 @@ class SiteContentOpenSourceTests(unittest.TestCase):
         self.assertTrue(content.open_source[0].synced)
         self.assertEqual(content.open_source_hidden, ["example/hidden#7"])
 
+    def test_english_translation_copy_is_preserved(self):
+        content = SiteContent.model_validate(
+            {
+                "translations": {
+                    "en": {
+                        "hero": {"lede": "English hero"},
+                        "projects": [
+                            {
+                                "slug": "portfolio",
+                                "title": "This portfolio",
+                                "desc": "English description",
+                            }
+                        ],
+                    }
+                }
+            }
+        )
+
+        self.assertEqual(content.translations["en"].hero.lede, "English hero")
+        self.assertEqual(content.translations["en"].projects[0].title, "This portfolio")
+
+    def test_only_english_translation_key_is_accepted(self):
+        with self.assertRaises(ValidationError):
+            SiteContent.model_validate({"translations": {"fr": {}}})
 if __name__ == "__main__":
     unittest.main()

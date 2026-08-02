@@ -335,6 +335,11 @@
 
   function localizeProject(project, locale){
     if(locale !== 'en' || !project) return project;
+    if(project._localized === 'en'){
+      const result = {...project};
+      delete result._localized;
+      return result;
+    }
     const translated = EN_CONTENT.projects[project.slug];
     return translated ? {...project, ...translated} : project;
   }

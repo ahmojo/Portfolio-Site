@@ -34,6 +34,64 @@
     'toml-rs/toml': {title:'TOML datetimes preserved', desc:'Preserved explicit TOML datetime values during deserialization without changing generic cross-format conversions.'},
   };
 
+  const copyFields = (target, source, fields) => {
+    if(!source) return target;
+    const patch = {};
+    fields.forEach(field => {
+      if(typeof source[field] === 'string') patch[field] = source[field];
+    });
+    return {...target, ...patch};
+  };
+
+  function applyEditableEnglishCopy(result, raw){
+    const translation = raw?.translations?.en;
+    if(!translation) return result;
+
+    result.hero = copyFields(result.hero || {}, translation.hero, ['name', 'lede']);
+    if(Array.isArray(translation.hero?.phrases)) result.hero.phrases = translation.hero.phrases.slice();
+    result.now = copyFields(result.now || {}, translation.now, ['status', 'detail']);
+
+    if(Array.isArray(translation.about?.paragraphs)){
+      result.about = {...(result.about || {}), paragraphs: translation.about.paragraphs.slice()};
+    }
+    if(Array.isArray(result.stats) && Array.isArray(translation.stats)){
+      result.stats = result.stats.map((stat, index) =>
+        copyFields(stat, translation.stats[index], ['label']),
+      );
+    }
+    if(Array.isArray(result.skills) && Array.isArray(translation.skills)){
+      result.skills = result.skills.map((skill, index) => {
+        const translated = translation.skills[index];
+        const next = copyFields(skill, translated, ['key']);
+        return Array.isArray(translated?.items) ? {...next, items: translated.items.slice()} : next;
+      });
+    }
+    if(Array.isArray(result.projects) && Array.isArray(translation.projects)){
+      const bySlug = new Map(translation.projects.map(project => [project.slug, project]));
+      result.projects = result.projects.map(project => {
+        const translated = bySlug.get(project.slug);
+        const next = copyFields(project, translated, ['title', 'desc', 'stack', 'content']);
+        if(Array.isArray(translated?.badges)){
+          next.badges = (next.badges || []).map((badge, index) =>
+            copyFields(badge, translated.badges[index], ['label']),
+          );
+        }
+        return next;
+      });
+    }
+    if(Array.isArray(result.open_source) && Array.isArray(translation.open_source)){
+      const byKey = new Map(translation.open_source.map(item => [`${item.repo}#${item.pr}`, item]));
+      result.open_source = result.open_source.map(item =>
+        copyFields(item, byKey.get(`${item.repo}#${item.pr}`), ['title', 'desc', 'tech']),
+      );
+    }
+    if(Array.isArray(result.learning) && Array.isArray(translation.learning)){
+      result.learning = result.learning.map((item, index) =>
+        copyFields(item, translation.learning[index], ['kind', 'name', 'date', 'title']),
+      );
+    }
+    return result;
+  }
   const originalLocalizeContent = localeApi.localizeContent;
   localeApi.localizeContent = function(content, locale){
     const result = originalLocalizeContent(content, locale);
@@ -50,6 +108,6 @@
         return translation ? {...item, ...translation} : item;
       });
     }
-    return result;
+    return locale === 'en' ? applyEditableEnglishCopy(result, content) : result;
   };
 })();

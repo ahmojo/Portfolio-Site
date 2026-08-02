@@ -180,6 +180,21 @@ class ThemeContent(BaseModel):
     ink: str = "#e6edf8"
     particles: int = 72
 
+
+class LocalizedSiteContent(BaseModel):
+    """Language-specific copy for the public portfolio."""
+
+    hero: HeroContent = HeroContent()
+    now: NowContent = NowContent()
+    about: AboutContent = AboutContent()
+    stats: list[StatItem] = []
+    skills: list[SkillRow] = []
+    projects: list[ProjectItem] = []
+    open_source: list[OpenSourceItem] = []
+    learning: list[LearnItem] = []
+    open_source_hidden: list[str] = Field(default_factory=list, max_length=500)
+
+
 class SiteContent(BaseModel):
     hero: HeroContent = HeroContent()
     now: NowContent = NowContent()
@@ -195,3 +210,4 @@ class SiteContent(BaseModel):
     learning: list[LearnItem] = []
     theme: ThemeContent = ThemeContent()
     open_source_hidden: list[str] = Field(default_factory=list, max_length=500)
+    translations: dict[Literal["en"], LocalizedSiteContent] = Field(default_factory=dict)

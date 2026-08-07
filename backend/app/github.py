@@ -9,7 +9,7 @@ import asyncio
 import logging
 import re
 import time
-from typing import Optional
+from typing import Any, Optional
 
 import httpx
 
@@ -18,9 +18,22 @@ from .config import settings
 log = logging.getLogger("portfolio.github")
 
 _GH_API = "https://api.github.com"
+_CCT_REPO = "ahmojo/codex-claude-transfer"
+_CCT_METRICS_URL = (
+    "https://raw.githubusercontent.com/ahmojo/codex-claude-transfer/"
+    "metrics/metrics/traffic.json"
+)
+_USAGE_TTL = 3600
+_BINARY_ASSET_RE = re.compile(
+    r"^(?:cct|codex-sync)_v[^_]+_(?:linux|darwin|windows)_"
+    r"(?:amd64|arm64)\.(?:tar\.gz|zip)$",
+    re.IGNORECASE,
+)
 
 _cache: dict[str, dict] = {}          # repo -> data
 _cache_ts: dict[str, float] = {}      # repo -> fetch timestamp
+_usage_cache: dict[str, dict[str, Any]] = {}
+_usage_attempt_ts: dict[str, float] = {}
 _lock = asyncio.Lock()
 
 
@@ -72,6 +85,102 @@ async def fetch_repo(client: httpx.AsyncClient, repo: str) -> Optional[dict]:
         return None
 
 
+async def fetch_release_downloads(
+    client: httpx.AsyncClient, repo: str = _CCT_REPO
+) -> Optional[int]:
+    """Count downloads of published, installable release binaries."""
+    total = 0
+    page = 1
+    try:
+        while True:
+            response = await client.get(
+                f"{_GH_API}/repos/{repo}/releases",
+                headers=_headers(),
+                params={"per_page": 100, "page": page},
+                timeout=8.0,
+            )
+            response.raise_for_status()
+            releases = response.json()
+            if not isinstance(releases, list):
+                raise ValueError("GitHub releases response is not a list")
+            for release in releases:
+                if not isinstance(release, dict) or release.get("draft"):
+                    continue
+                for asset in release.get("assets", []):
+                    if not isinstance(asset, dict):
+                        continue
+                    if _BINARY_ASSET_RE.fullmatch(str(asset.get("name", ""))):
+                        count = asset.get("download_count")
+                        if (
+                            isinstance(count, int)
+                            and not isinstance(count, bool)
+                            and count >= 0
+                        ):
+                            total += count
+            if len(releases) < 100:
+                return total
+            page += 1
+    except Exception as exc:
+        log.warning("GitHub release fetch failed for %s: %s", repo, exc)
+        return None
+
+
+def _optional_non_negative_int(value: Any) -> Optional[int]:
+    if isinstance(value, int) and not isinstance(value, bool) and value >= 0:
+        return value
+    return None
+
+
+async def fetch_traffic_metrics(client: httpx.AsyncClient) -> Optional[dict]:
+    """Fetch and validate the public clone metrics snapshot."""
+    try:
+        response = await client.get(_CCT_METRICS_URL, timeout=8.0)
+        response.raise_for_status()
+        data = response.json()
+        if not isinstance(data, dict):
+            raise ValueError("traffic metrics response is not an object")
+        if (
+            data.get("schema_version") != 1
+            or str(data.get("repo", "")).lower() != _CCT_REPO
+        ):
+            raise ValueError("unsupported traffic metrics document")
+        return {
+            "clones_14d": _optional_non_negative_int(data.get("clones_14d")),
+            "unique_cloners_14d": _optional_non_negative_int(
+                data.get("unique_cloners_14d")
+            ),
+            "tracked_total_clones": _optional_non_negative_int(
+                data.get("tracked_total_clones")
+            ),
+            "tracked_since": (
+                data.get("tracked_since")
+                if isinstance(data.get("tracked_since"), str)
+                else None
+            ),
+            "metrics_updated_at": (
+                data.get("updated_at")
+                if isinstance(data.get("updated_at"), str)
+                else None
+            ),
+        }
+    except Exception as exc:
+        log.warning("GitHub traffic metrics fetch failed for %s: %s", _CCT_REPO, exc)
+        return None
+
+
+async def fetch_cct_usage(client: httpx.AsyncClient) -> dict[str, Any]:
+    """Fetch independent CCT usage sources without coupling their failures."""
+    release_downloads, traffic = await asyncio.gather(
+        fetch_release_downloads(client), fetch_traffic_metrics(client)
+    )
+    result: dict[str, Any] = {}
+    if release_downloads is not None:
+        result["release_downloads"] = release_downloads
+    if traffic is not None:
+        result.update(traffic)
+    return result
+
+
 async def get_projects(projects: list[tuple[str, str]] | None = None) -> list[dict]:
     """Return project data for all configured repos, using a TTL cache."""
     configured = projects or list(settings.projects.items())
@@ -112,10 +221,25 @@ async def get_projects(projects: list[tuple[str, str]] | None = None) -> list[di
                     _cache[repo] = data
                     _cache_ts[repo] = now
 
+    includes_cct = any(repo.lower() == _CCT_REPO for _, _, repo in configured)
+    async with _lock:
+        usage_stale = (
+            includes_cct
+            and now - _usage_attempt_ts.get(_CCT_REPO, 0) > _USAGE_TTL
+        )
+    if usage_stale:
+        async with httpx.AsyncClient() as client:
+            usage = await fetch_cct_usage(client)
+        async with _lock:
+            _usage_attempt_ts[_CCT_REPO] = now
+            if usage:
+                previous = _usage_cache.get(_CCT_REPO, {})
+                _usage_cache[_CCT_REPO] = {**previous, **usage}
+
     out = []
     for name, original, repo in configured:
         data = _cache.get(repo, {})
-        out.append({
+        project = {
             "name": name,
             "repo": original,
             "url": data.get("url", f"https://github.com/{repo}"),
@@ -127,5 +251,14 @@ async def get_projects(projects: list[tuple[str, str]] | None = None) -> list[di
             "exists": data.get("exists", True),
             "cached": (now - _cache_ts.get(repo, now)) < ttl * 0.9,
             "fetched_at": _cache_ts.get(repo),
-        })
+            "release_downloads": None,
+            "clones_14d": None,
+            "unique_cloners_14d": None,
+            "tracked_total_clones": None,
+            "tracked_since": None,
+            "metrics_updated_at": None,
+        }
+        if repo.lower() == _CCT_REPO:
+            project.update(_usage_cache.get(_CCT_REPO, {}))
+        out.append(project)
     return out

@@ -969,6 +969,28 @@ footer{
 .gh-meta .forks{color:var(--blue)}
 .gh-meta .lang{color:var(--blue)}
 .gh-meta .upd{color:var(--ink-mute)}
+.cct-metrics{display:flex;flex:1 0 100%;align-items:center;flex-wrap:wrap;
+  gap:6px 14px;margin-top:8px;color:var(--ink-dim);line-height:1.5}
+.cct-metric{display:inline-flex;align-items:center;gap:5px}
+.cct-metric .ic{color:var(--acc)}
+.cct-metrics-help{position:relative;display:inline-flex;align-items:center;
+  justify-content:center;width:20px;height:20px;border:1px solid var(--line-2);
+  border-radius:50%;background:transparent;color:var(--ink-mute);
+  font:10px/1 var(--mono);cursor:help}
+.cct-metrics-help:hover,.cct-metrics-help:focus-visible{color:var(--acc);
+  border-color:var(--acc);outline:none}
+.cct-metrics-help::after{content:attr(data-tooltip);position:absolute;z-index:20;
+  left:50%;bottom:calc(100% + 8px);width:min(320px,80vw);padding:9px 11px;
+  border:1px solid var(--line-2);border-radius:5px;background:var(--bg-1);
+  color:var(--ink-dim);font:11px/1.55 var(--sans);text-align:left;
+  box-shadow:0 8px 24px rgba(0,0,0,.3);transform:translateX(-50%);
+  opacity:0;visibility:hidden;pointer-events:none}
+.cct-metrics-help:hover::after,.cct-metrics-help:focus-visible::after{
+  opacity:1;visibility:visible}
+@media(max-width:600px){
+  .cct-metrics{align-items:flex-start;flex-direction:column;gap:5px}
+  .cct-metrics-help::after{left:auto;right:-8px;transform:none}
+}
 .gh-meta.empty{opacity:.5}
 .gh-meta.err .chip{color:var(--red);border-color:rgba(232,128,128,.25)}
 .gh-skel{display:inline-block;width:46px;height:13px;border-radius:3px;
@@ -1691,7 +1713,7 @@ footer{
 
 <div id="toast" role="status" aria-live="polite"></div>
 
-<script src="locale.js?v=20260802-editable-en"></script><script src="locale-content.js?v=20260802-editable-en"></script><script src="locale-controller.js?v=20260802-editable-en"></script><script src="locale-fixes.js?v=20260802-editable-en"></script><script src="locale-runtime-fixes.js?v=20260802-editable-en"></script><script data-cfasync="false" src="/cdn-cgi/scripts/5c5dd728/cloudflare-static/email-decode.min.js"></script><script>
+<script src="locale.js?v=20260807-cct-metrics"></script><script src="locale-content.js?v=20260802-editable-en"></script><script src="locale-controller.js?v=20260802-editable-en"></script><script src="locale-fixes.js?v=20260802-editable-en"></script><script src="locale-runtime-fixes.js?v=20260802-editable-en"></script><script data-cfasync="false" src="/cdn-cgi/scripts/5c5dd728/cloudflare-static/email-decode.min.js"></script><script>
 const RM = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 
 /* ─── API + toast helpers ─────────────────────────── */
@@ -1845,7 +1867,23 @@ function normalizeGithubRepo(value){
 
 /* ─── live project metadata ───────────────────────── */
 (function(){
+  const hasMetric = value => Number.isInteger(value) && value >= 0;
+  const formatMetricNumber = (value, locale) =>
+    new Intl.NumberFormat(locale === 'de' ? 'de-CH' : 'en').format(value);
+  const formatTrackedDate = (value, locale) => {
+    if(!/^\d{4}-\d{2}-\d{2}$/.test(value || '')) return '';
+    const date = new Date(`${value}T00:00:00Z`);
+    if(Number.isNaN(date.getTime())) return '';
+    return new Intl.DateTimeFormat(locale === 'de' ? 'de-CH' : 'en', {
+      dateStyle: 'medium',
+      timeZone: 'UTC',
+    }).format(date);
+  };
+  const metric = (icon, text) =>
+    `<span class="cct-metric"><span class="ic" aria-hidden="true">${icon}</span><span>${escapeHtml(text)}</span></span>`;
+
   function fill(slot, p){
+    const githubCopy = window.PortfolioLocale?.UI?.[window.__portfolioLocale || 'de']?.github;
     if(!p || p.exists === false){
       slot.className = 'gh-meta empty';
       const label = githubCopy?.notFound || 'not found';
@@ -1856,7 +1894,6 @@ function normalizeGithubRepo(value){
     const repo = normalizeGithubRepo(p.repo || slot.dataset.repo);
     const stars = Number(p.stars) || 0;
     const forks = Number(p.forks) || 0;
-    const githubCopy = window.PortfolioLocale?.UI?.[window.__portfolioLocale || 'de']?.github;
     if(repo && stars > 0){
       const base = `https://github.com/${escapeHtml(repo)}`;
       chips.push(`<a class="chip" href="${base}/stargazers" target="_blank" rel="noopener" aria-label="${escapeHtml(githubCopy?.seeStars ? githubCopy.seeStars(stars) : `${stars} GitHub stars ansehen`)}"><span class="ic">★</span><span class="stars">${stars}</span></a>`);
@@ -1867,8 +1904,31 @@ function normalizeGithubRepo(value){
       const updated = githubCopy?.updated ? githubCopy.updated(timeAgo(p.updated_at)) : `updated ${timeAgo(p.updated_at)}`;
       chips.push(`<span class="chip"><span class="upd">${escapeHtml(updated)}</span></span>`);
     }
+    let metrics = '';
+    if(repo.toLowerCase() === 'ahmojo/codex-claude-transfer'){
+      const locale = window.__portfolioLocale || 'de';
+      const copy = githubCopy?.metrics;
+      const items = [];
+      if(copy && hasMetric(p.release_downloads)){
+        items.push(metric('↓', copy.releaseDownloads(formatMetricNumber(p.release_downloads, locale))));
+      }
+      if(copy && hasMetric(p.unique_cloners_14d)){
+        items.push(metric('◉', copy.uniqueCloners14d(formatMetricNumber(p.unique_cloners_14d, locale))));
+      }
+      const since = formatTrackedDate(p.tracked_since, locale);
+      if(copy && hasMetric(p.tracked_total_clones) && since){
+        items.push(metric('⑂', copy.trackedTotal(formatMetricNumber(p.tracked_total_clones, locale), since)));
+      }
+      if(copy && hasMetric(p.clones_14d)){
+        items.push(metric('↙', copy.clones14d(formatMetricNumber(p.clones_14d, locale))));
+      }
+      if(items.length){
+        const help = `<button type="button" class="cct-metrics-help" aria-label="${escapeHtml(copy.helpLabel)}" data-tooltip="${escapeHtml(copy.help)}"><span aria-hidden="true">?</span></button>`;
+        metrics = `<div class="cct-metrics">${items.join('')}${help}</div>`;
+      }
+    }
     slot.className = 'gh-meta';
-    slot.innerHTML = chips.join('');
+    slot.innerHTML = chips.join('') + metrics;
     slot.title = p.repo;
   }
 

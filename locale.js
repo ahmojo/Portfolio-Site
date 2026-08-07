@@ -33,6 +33,14 @@
         openPull: (repo, pr) => `${repo} Pull Request ${pr} öffnen`,
         notFound: 'nicht gefunden',
         updated: value => `aktualisiert ${value}`,
+        metrics: {
+          releaseDownloads: value => `${value} Release-Downloads`,
+          uniqueCloners14d: value => `${value} eindeutige Klon-Quellen · 14 Tage`,
+          trackedTotal: (value, since) => `${value} Klone erfasst seit ${since}`,
+          clones14d: value => `${value} Klonvorgänge in den letzten 14 Tagen`,
+          helpLabel: 'Hinweise zu den Nutzungsmetriken',
+          help: 'Release-Downloads zählen veröffentlichte Plattform-Binaries aller Versionen. Klonstatistiken können automatisierte Zugriffe durch CI, Scanner und andere Dienste enthalten. Eindeutige Klon-Quellen gelten nur für die letzten 14 Tage.',
+        },
       },
       learning: {
         summary: 'klick für Zertifikat',
@@ -103,6 +111,14 @@
         openPull: (repo, pr) => `Open ${repo} pull request ${pr}`,
         notFound: 'not found',
         updated: value => `updated ${value}`,
+        metrics: {
+          releaseDownloads: value => `${value} release downloads`,
+          uniqueCloners14d: value => `${value} unique clone sources · 14 days`,
+          trackedTotal: (value, since) => `${value} clones tracked since ${since}`,
+          clones14d: value => `${value} clone operations in the last 14 days`,
+          helpLabel: 'About these usage metrics',
+          help: 'Release downloads count published platform binaries across all versions. Clone traffic may include automated access from CI systems, scanners, and other services. Unique clone sources apply only to the last 14 days.',
+        },
       },
       learning: {
         summary: 'click for certificate',

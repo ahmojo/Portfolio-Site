@@ -20,6 +20,12 @@ class ProjectOut(BaseModel):
     exists: bool = True
     cached: bool = False
     fetched_at: Optional[Union[float, str]] = None
+    release_downloads: Optional[int] = None
+    clones_14d: Optional[int] = None
+    unique_cloners_14d: Optional[int] = None
+    tracked_total_clones: Optional[int] = None
+    tracked_since: Optional[str] = None
+    metrics_updated_at: Optional[str] = None
 
 
 # ─── now ──────────────────────────────────────────────────────

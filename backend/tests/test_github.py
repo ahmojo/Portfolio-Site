@@ -11,6 +11,7 @@ from app import github
 from app.github import (
     fetch_release_downloads,
     fetch_repo,
+    fetch_cct_usage,
     fetch_traffic_metrics,
     get_projects,
 )
@@ -170,6 +171,92 @@ class GithubMetadataTests(unittest.IsolatedAsyncioTestCase):
             )
         ) as client:
             self.assertIsNone(await fetch_traffic_metrics(client))
+
+    async def test_fetches_chronological_metric_snapshots(self):
+        payload = {
+            "schema_version": 1,
+            "repo": github._CCT_REPO,
+            "tracked_since": "2026-08-01",
+            "updated_at": "2026-08-08T03:17:00Z",
+            "release_downloads": 25,
+            "clones_14d": 12,
+            "unique_cloners_14d": 7,
+            "tracked_total_clones": 18,
+            "days": {},
+            "snapshots": {
+                "invalid": {"release_downloads": 999},
+                "2026-08-08": {
+                    "release_downloads": 25,
+                    "clones_14d": 12,
+                },
+                "2026-08-07": {
+                    "release_downloads": 20,
+                    "clones_14d": 9,
+                },
+            },
+        }
+        async with httpx.AsyncClient(
+            transport=httpx.MockTransport(
+                lambda request: httpx.Response(200, json=payload)
+            )
+        ) as client:
+            result = await fetch_traffic_metrics(client)
+
+        self.assertEqual(result["release_downloads"], 25)
+        self.assertEqual(
+            result["metrics_history"],
+            [
+                {
+                    "date": "2026-08-07",
+                    "release_downloads": 20,
+                    "clones_14d": 9,
+                },
+                {
+                    "date": "2026-08-08",
+                    "release_downloads": 25,
+                    "clones_14d": 12,
+                },
+            ],
+        )
+
+    async def test_usage_deltas_compare_with_previous_daily_snapshot(self):
+        traffic = {
+            "clones_14d": 12,
+            "unique_cloners_14d": 7,
+            "tracked_total_clones": 18,
+            "metrics_history": [
+                {
+                    "date": "2026-08-07",
+                    "release_downloads": 20,
+                    "clones_14d": 9,
+                    "unique_cloners_14d": 6,
+                    "tracked_total_clones": 13,
+                },
+                {
+                    "date": "2026-08-08",
+                    "release_downloads": 23,
+                    "clones_14d": 12,
+                    "unique_cloners_14d": 7,
+                    "tracked_total_clones": 18,
+                },
+            ],
+        }
+        with (
+            patch(
+                "app.github.fetch_release_downloads",
+                new=AsyncMock(return_value=25),
+            ),
+            patch(
+                "app.github.fetch_traffic_metrics",
+                new=AsyncMock(return_value=traffic),
+            ),
+        ):
+            result = await fetch_cct_usage(AsyncMock())
+
+        self.assertEqual(result["release_downloads_delta_1d"], 5)
+        self.assertEqual(result["clones_14d_delta_1d"], 3)
+        self.assertEqual(result["unique_cloners_14d_delta_1d"], 1)
+        self.assertEqual(result["tracked_total_clones_delta_1d"], 5)
     async def test_project_output_keeps_cached_usage_after_refresh_failure(self):
         github._usage_cache[github._CCT_REPO] = {
             "release_downloads": 23,
@@ -244,6 +331,8 @@ class GithubMetadataTests(unittest.IsolatedAsyncioTestCase):
         self.assertIsNone(payload["clones_14d"])
         self.assertIsNone(payload["unique_cloners_14d"])
         self.assertIsNone(payload["tracked_total_clones"])
+        self.assertIsNone(payload["release_downloads_delta_1d"])
+        self.assertIsNone(payload["metrics_history"])
     def test_response_model_keeps_fork_count(self):
         project = ProjectOut(
             name="Example",
@@ -264,6 +353,8 @@ class GithubMetadataTests(unittest.IsolatedAsyncioTestCase):
         output = project.model_dump()
         self.assertIsNone(output["release_downloads"])
         self.assertIsNone(output["tracked_total_clones"])
+        self.assertIsNone(output["release_downloads_delta_1d"])
+        self.assertIsNone(output["metrics_history"])
 
 
 if __name__ == "__main__":

@@ -9,6 +9,7 @@ import asyncio
 import logging
 import re
 import time
+from datetime import date
 from typing import Any, Optional
 
 import httpx
@@ -28,6 +29,12 @@ _BINARY_ASSET_RE = re.compile(
     r"^(?:cct|codex-sync)_v[^_]+_(?:linux|darwin|windows)_"
     r"(?:amd64|arm64)\.(?:tar\.gz|zip)$",
     re.IGNORECASE,
+)
+_SNAPSHOT_FIELDS = (
+    "release_downloads",
+    "clones_14d",
+    "unique_cloners_14d",
+    "tracked_total_clones",
 )
 
 _cache: dict[str, dict] = {}          # repo -> data
@@ -131,6 +138,45 @@ def _optional_non_negative_int(value: Any) -> Optional[int]:
     return None
 
 
+def _validated_metric_snapshots(value: Any) -> list[dict[str, Any]]:
+    if not isinstance(value, dict):
+        return []
+    snapshots: list[dict[str, Any]] = []
+    for day_key, raw_snapshot in sorted(value.items()):
+        if not isinstance(day_key, str) or not isinstance(raw_snapshot, dict):
+            continue
+        try:
+            if date.fromisoformat(day_key).isoformat() != day_key:
+                continue
+        except ValueError:
+            continue
+        snapshot: dict[str, Any] = {"date": day_key}
+        for field in _SNAPSHOT_FIELDS:
+            parsed = _optional_non_negative_int(raw_snapshot.get(field))
+            if parsed is not None:
+                snapshot[field] = parsed
+        if len(snapshot) > 1:
+            snapshots.append(snapshot)
+    return snapshots
+
+
+def _daily_metric_deltas(
+    current: dict[str, Any], snapshots: list[dict[str, Any]]
+) -> dict[str, int]:
+    deltas: dict[str, int] = {}
+    for field in _SNAPSHOT_FIELDS:
+        current_value = _optional_non_negative_int(current.get(field))
+        values = [
+            snapshot[field]
+            for snapshot in snapshots
+            if _optional_non_negative_int(snapshot.get(field)) is not None
+        ]
+        if current_value is None or len(values) < 2:
+            continue
+        deltas[f"{field}_delta_1d"] = current_value - values[-2]
+    return deltas
+
+
 async def fetch_traffic_metrics(client: httpx.AsyncClient) -> Optional[dict]:
     """Fetch and validate the public clone metrics snapshot."""
     try:
@@ -144,7 +190,10 @@ async def fetch_traffic_metrics(client: httpx.AsyncClient) -> Optional[dict]:
             or str(data.get("repo", "")).lower() != _CCT_REPO
         ):
             raise ValueError("unsupported traffic metrics document")
-        return {
+        metrics = {
+            "release_downloads": _optional_non_negative_int(
+                data.get("release_downloads")
+            ),
             "clones_14d": _optional_non_negative_int(data.get("clones_14d")),
             "unique_cloners_14d": _optional_non_negative_int(
                 data.get("unique_cloners_14d")
@@ -162,6 +211,14 @@ async def fetch_traffic_metrics(client: httpx.AsyncClient) -> Optional[dict]:
                 if isinstance(data.get("updated_at"), str)
                 else None
             ),
+            "metrics_history": _validated_metric_snapshots(
+                data.get("snapshots")
+            ),
+        }
+        return {
+            key: value
+            for key, value in metrics.items()
+            if value is not None and value != []
         }
     except Exception as exc:
         log.warning("GitHub traffic metrics fetch failed for %s: %s", _CCT_REPO, exc)
@@ -174,10 +231,13 @@ async def fetch_cct_usage(client: httpx.AsyncClient) -> dict[str, Any]:
         fetch_release_downloads(client), fetch_traffic_metrics(client)
     )
     result: dict[str, Any] = {}
-    if release_downloads is not None:
-        result["release_downloads"] = release_downloads
     if traffic is not None:
         result.update(traffic)
+    if release_downloads is not None:
+        result["release_downloads"] = release_downloads
+    history = result.get("metrics_history")
+    if isinstance(history, list):
+        result.update(_daily_metric_deltas(result, history))
     return result
 
 
@@ -257,6 +317,11 @@ async def get_projects(projects: list[tuple[str, str]] | None = None) -> list[di
             "tracked_total_clones": None,
             "tracked_since": None,
             "metrics_updated_at": None,
+            "release_downloads_delta_1d": None,
+            "clones_14d_delta_1d": None,
+            "unique_cloners_14d_delta_1d": None,
+            "tracked_total_clones_delta_1d": None,
+            "metrics_history": None,
         }
         if repo.lower() == _CCT_REPO:
             project.update(_usage_cache.get(_CCT_REPO, {}))

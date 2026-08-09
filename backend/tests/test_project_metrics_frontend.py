@@ -20,23 +20,36 @@ def test_partial_metrics_are_guarded_before_rendering():
         "tracked_total_clones",
         "clones_14d",
     ):
-        assert f"hasMetric(p.{field})" in html
+        assert f"key:'{field}'" in html
 
-    assert "p.tracked_total_clones) && since" in html
-    assert 'aria-hidden="true">${icon}' in html
+    assert "filter(def => hasMetric(p[def.key]))" in html
+    assert 'aria-hidden="true">${def.icon}' in html
     assert 'class="cct-metrics-help"' in html
     assert 'type="button"' in html
+    assert '<dialog class="cct-help-dialog"' in html
+    assert "dialog.showModal()" in html
+    assert "metricPoints(p, def.key)" in html
 
 
 def test_metric_copy_preserves_required_semantics():
     locale = (ROOT / "locale.js").read_text(encoding="utf-8")
 
-    assert "eindeutige Klon-Quellen · 14 Tage" in locale
-    assert "unique clone sources · 14 days" in locale
+    assert "Eindeutige Klon-Quellen · 14 Tage" in locale
+    assert "Unique clone sources · 14 days" in locale
     assert "automatisierte Zugriffe durch CI" in locale
     assert "automated access from CI systems" in locale
+    assert "rollierende 14-Tage-Fenster" in locale
+    assert "rolling 14-day window" in locale
     assert "all-time unique" not in locale.lower()
     assert "Lifetime Unique Users" not in locale
+
+
+def test_mobile_help_is_a_viewport_bound_bottom_sheet():
+    html = (ROOT / "index.html").read_text(encoding="utf-8")
+
+    assert ".cct-help-dialog::backdrop" in html
+    assert "inset:auto 0 0;width:100vw;max-width:100vw" in html
+    assert "safe-area-inset-bottom" in html
 
 
 def test_inline_frontend_scripts_have_valid_javascript():

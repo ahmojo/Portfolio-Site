@@ -969,27 +969,85 @@ footer{
 .gh-meta .forks{color:var(--blue)}
 .gh-meta .lang{color:var(--blue)}
 .gh-meta .upd{color:var(--ink-mute)}
-.cct-metrics{display:flex;flex:1 0 100%;align-items:center;flex-wrap:wrap;
-  gap:6px 14px;margin-top:8px;color:var(--ink-dim);line-height:1.5}
-.cct-metric{display:inline-flex;align-items:center;gap:5px}
-.cct-metric .ic{color:var(--acc)}
-.cct-metrics-help{position:relative;display:inline-flex;align-items:center;
-  justify-content:center;width:20px;height:20px;border:1px solid var(--line-2);
-  border-radius:50%;background:transparent;color:var(--ink-mute);
-  font:10px/1 var(--mono);cursor:help}
+.cct-metrics{position:relative;flex:1 0 100%;min-width:0;margin-top:10px;
+  color:var(--ink-dim);line-height:1.35}
+.cct-metrics-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));
+  gap:7px;padding-right:31px}
+.cct-metric-card{position:relative;display:flex;min-width:0;min-height:82px;
+  flex-direction:column;align-items:flex-start;justify-content:space-between;
+  gap:5px;padding:10px;border:1px solid var(--line);border-radius:6px;
+  background:rgba(255,255,255,.014);color:inherit;font:inherit;text-align:left}
+button.cct-metric-card{cursor:pointer;transition:border-color var(--t),background var(--t),transform var(--t)}
+button.cct-metric-card:hover{border-color:var(--line-2);background:rgba(255,255,255,.035)}
+button.cct-metric-card:focus-visible{outline:2px solid var(--acc);outline-offset:2px}
+button.cct-metric-card:active{transform:translateY(1px)}
+.cct-metric-card.is-primary{border-color:rgba(109,230,162,.38)}
+.cct-metric-card.is-active{border-color:var(--acc);background:rgba(109,230,162,.045)}
+.cct-metric-top{display:flex;width:100%;align-items:center;gap:7px}
+.cct-metric-card .ic{flex:0 0 auto;color:var(--acc);font-size:15px}
+.cct-metric-value{color:var(--ink);font-size:20px;font-weight:700;letter-spacing:-.035em}
+.cct-metric-label{overflow:hidden;max-width:100%;color:var(--ink-mute);
+  font-size:9.5px;line-height:1.25;text-overflow:ellipsis;white-space:nowrap}
+.cct-metric-note{display:block;margin-top:1px;color:var(--ink-faint);font-size:8.5px}
+.cct-delta{display:inline-flex;align-items:center;min-height:18px;padding:2px 7px;
+  border:1px solid rgba(109,230,162,.38);border-radius:999px;color:var(--acc);
+  font-size:9px;line-height:1}
+.cct-delta.is-negative{border-color:rgba(232,128,128,.35);color:var(--red)}
+.cct-delta.is-zero{border-color:var(--line-2);color:var(--ink-faint)}
+.cct-sparkline{position:absolute;right:8px;top:9px;width:42px;height:20px;overflow:visible}
+.cct-sparkline path{fill:none;stroke:var(--acc);stroke-width:1.5;vector-effect:non-scaling-stroke}
+.cct-metrics-help{position:absolute;right:0;top:9px;display:inline-flex;
+  align-items:center;justify-content:center;width:23px;height:23px;
+  border:1px solid var(--line-2);border-radius:50%;background:transparent;
+  color:var(--ink-mute);font:10px/1 var(--mono);cursor:pointer}
 .cct-metrics-help:hover,.cct-metrics-help:focus-visible{color:var(--acc);
   border-color:var(--acc);outline:none}
-.cct-metrics-help::after{content:attr(data-tooltip);position:absolute;z-index:20;
-  left:50%;bottom:calc(100% + 8px);width:min(320px,80vw);padding:9px 11px;
-  border:1px solid var(--line-2);border-radius:5px;background:var(--bg-1);
-  color:var(--ink-dim);font:11px/1.55 var(--sans);text-align:left;
-  box-shadow:0 8px 24px rgba(0,0,0,.3);transform:translateX(-50%);
-  opacity:0;visibility:hidden;pointer-events:none}
-.cct-metrics-help:hover::after,.cct-metrics-help:focus-visible::after{
-  opacity:1;visibility:visible}
+.cct-chart{margin-top:8px;padding:12px;border:1px solid var(--line-2);
+  border-radius:7px;background:rgba(9,13,23,.36)}
+.cct-chart-head{display:flex;align-items:flex-start;justify-content:space-between;
+  gap:12px;margin-bottom:9px}
+.cct-chart-kicker{color:var(--ink-mute);font-size:9px;text-transform:uppercase;letter-spacing:.08em}
+.cct-chart-total{display:flex;align-items:center;gap:8px;margin-top:2px}
+.cct-chart-total strong{color:var(--ink);font-size:22px;letter-spacing:-.035em}
+.cct-chart-ranges{display:inline-flex;padding:2px;border:1px solid var(--line);border-radius:5px}
+.cct-chart-range{min-width:34px;padding:4px 7px;border:0;border-radius:3px;
+  background:transparent;color:var(--ink-faint);font:9px/1 var(--mono);cursor:pointer}
+.cct-chart-range[aria-selected="true"]{background:var(--line);color:var(--ink)}
+.cct-chart-range:focus-visible{outline:2px solid var(--acc);outline-offset:2px}
+.cct-chart-plot{display:block;width:100%;height:auto;overflow:visible}
+.cct-chart-grid{stroke:var(--line);stroke-width:1;stroke-dasharray:3 4}
+.cct-chart-area{fill:rgba(109,230,162,.09)}
+.cct-chart-line{fill:none;stroke:var(--acc);stroke-width:2;vector-effect:non-scaling-stroke}
+.cct-chart-dot{fill:var(--bg);stroke:var(--acc);stroke-width:1.5}
+.cct-chart-label{fill:var(--ink-faint);font:9px var(--mono)}
+.cct-chart-foot{margin-top:7px;color:var(--ink-faint);font-size:9px}
+.cct-help-dialog{width:min(390px,calc(100vw - 28px));max-width:none;padding:0;
+  border:1px solid var(--line-2);border-radius:10px;background:var(--bg-1);
+  color:var(--ink);box-shadow:0 22px 70px rgba(0,0,0,.55)}
+.cct-help-dialog::backdrop{background:rgba(5,8,15,.72);backdrop-filter:blur(2px)}
+.cct-help-inner{position:relative;padding:22px}
+.cct-help-inner h3{margin:0 36px 13px 0;font:600 17px/1.25 var(--sans)}
+.cct-help-inner p{margin:0 0 9px;color:var(--ink-dim);font:12px/1.55 var(--sans)}
+.cct-help-inner p:last-of-type{margin-bottom:0}
+.cct-help-close{position:absolute;right:14px;top:14px;width:30px;height:30px;
+  border:1px solid var(--line-2);border-radius:50%;background:transparent;
+  color:var(--ink-mute);font:16px/1 var(--sans);cursor:pointer}
+.cct-help-close:hover,.cct-help-close:focus-visible{border-color:var(--acc);color:var(--acc);outline:none}
 @media(max-width:600px){
-  .cct-metrics{align-items:flex-start;flex-direction:column;gap:5px}
-  .cct-metrics-help::after{left:auto;right:-8px;transform:none}
+  .cct-metrics-grid{grid-template-columns:repeat(2,minmax(0,1fr));padding-right:0}
+  .cct-metric-card{min-height:88px}
+  .cct-metrics-help{position:relative;right:auto;top:auto;margin:9px auto 0}
+  .cct-help-dialog{inset:auto 0 0;width:100vw;max-width:100vw;margin:0;
+    max-height:min(78vh,520px);border-width:1px 0 0;border-radius:15px 15px 0 0}
+  .cct-help-inner{padding:29px 20px calc(24px + env(safe-area-inset-bottom))}
+  .cct-help-inner::before{content:"";position:absolute;left:50%;top:9px;
+    width:42px;height:4px;border-radius:999px;background:var(--line-2);transform:translateX(-50%)}
+  .cct-chart-head{align-items:flex-start;flex-direction:column}
+  .cct-chart-ranges{align-self:stretch}
+  .cct-chart-range{flex:1}
+}
+@media(prefers-reduced-motion:reduce){
+  button.cct-metric-card{transition:none}
 }
 .gh-meta.empty{opacity:.5}
 .gh-meta.err .chip{color:var(--red);border-color:rgba(232,128,128,.25)}
@@ -1713,7 +1771,7 @@ footer{
 
 <div id="toast" role="status" aria-live="polite"></div>
 
-<script src="locale.js?v=20260807-cct-metrics"></script><script src="locale-content.js?v=20260802-editable-en"></script><script src="locale-controller.js?v=20260802-editable-en"></script><script src="locale-fixes.js?v=20260802-editable-en"></script><script src="locale-runtime-fixes.js?v=20260802-editable-en"></script><script data-cfasync="false" src="/cdn-cgi/scripts/5c5dd728/cloudflare-static/email-decode.min.js"></script><script>
+<script src="locale.js?v=20260809-cct-dashboard"></script><script src="locale-content.js?v=20260802-editable-en"></script><script src="locale-controller.js?v=20260802-editable-en"></script><script src="locale-fixes.js?v=20260802-editable-en"></script><script src="locale-runtime-fixes.js?v=20260802-editable-en"></script><script data-cfasync="false" src="/cdn-cgi/scripts/5c5dd728/cloudflare-static/email-decode.min.js"></script><script>
 const RM = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 
 /* ─── API + toast helpers ─────────────────────────── */
@@ -1879,8 +1937,161 @@ function normalizeGithubRepo(value){
       timeZone: 'UTC',
     }).format(date);
   };
-  const metric = (icon, text) =>
-    `<span class="cct-metric"><span class="ic" aria-hidden="true">${icon}</span><span>${escapeHtml(text)}</span></span>`;
+  const formatChartDate = (value, locale) => {
+    const date = new Date(`${value}T00:00:00Z`);
+    if(Number.isNaN(date.getTime())) return value;
+    return new Intl.DateTimeFormat(locale === 'de' ? 'de-CH' : 'en', {
+      day: 'numeric', month: 'short', timeZone: 'UTC',
+    }).format(date);
+  };
+  const formatDelta = (value, locale) => {
+    if(!Number.isInteger(value)) return '';
+    const absolute = formatMetricNumber(Math.abs(value), locale);
+    return value > 0 ? `+${absolute}` : value < 0 ? `−${absolute}` : '0';
+  };
+  const metricPoints = (p, key) => {
+    const points = (Array.isArray(p.metrics_history) ? p.metrics_history : [])
+      .filter(point => /^\d{4}-\d{2}-\d{2}$/.test(point?.date || '') && hasMetric(point?.[key]))
+      .map(point => ({date: point.date, value: point[key]}));
+    if(hasMetric(p[key])){
+      const today = new Date().toISOString().slice(0,10);
+      const current = {date: today, value: p[key]};
+      const sameDay = points.findIndex(point => point.date === today);
+      if(sameDay >= 0) points[sameDay] = current;
+      else points.push(current);
+    }
+    return points.sort((a,b) => a.date.localeCompare(b.date));
+  };
+  const sparkline = points => {
+    const values = points.slice(-12).map(point => point.value);
+    if(values.length < 2) return '';
+    const min = Math.min(...values);
+    const max = Math.max(...values);
+    const span = Math.max(max - min, 1);
+    const path = values.map((value,index) => {
+      const x = index * (58 / (values.length - 1));
+      const y = 18 - ((value - min) / span) * 16;
+      return `${index ? 'L' : 'M'}${x.toFixed(1)} ${y.toFixed(1)}`;
+    }).join(' ');
+    return `<svg class="cct-sparkline" viewBox="0 0 58 20" aria-hidden="true"><path d="${path}"/></svg>`;
+  };
+  const metricDefinitions = (p, copy, locale) => {
+    const since = formatTrackedDate(p.tracked_since, locale);
+    return [
+      {
+        key:'release_downloads', deltaKey:'release_downloads_delta_1d', icon:'↓',
+        label:copy.releaseDownloadsLabel, title:copy.releaseDownloadsTitle,
+        note:copy.releaseDownloadsNote, primary:true,
+      },
+      {
+        key:'tracked_total_clones', deltaKey:'tracked_total_clones_delta_1d', icon:'⑂',
+        label:copy.trackedTotalLabel, title:copy.trackedTotalTitle,
+        note:since ? copy.since(since) : '',
+      },
+      {
+        key:'unique_cloners_14d', deltaKey:'unique_cloners_14d_delta_1d', icon:'◎',
+        label:copy.uniqueClonersLabel, title:copy.uniqueClonersTitle,
+        note:copy.rollingWindow,
+      },
+      {
+        key:'clones_14d', deltaKey:'clones_14d_delta_1d', icon:'↙',
+        label:copy.clones14dLabel, title:copy.clones14dTitle,
+        note:copy.rollingWindow,
+      },
+    ].filter(def => hasMetric(p[def.key])).map(def => ({
+      ...def,
+      value:p[def.key],
+      delta:Number.isInteger(p[def.deltaKey]) ? p[def.deltaKey] : null,
+      points:metricPoints(p, def.key),
+    }));
+  };
+  const chartSvg = (points, locale, ariaLabel) => {
+    const width = 640, height = 172;
+    const left = 46, right = 12, top = 12, bottom = 29;
+    const values = points.map(point => point.value);
+    let min = Math.min(...values), max = Math.max(...values);
+    if(min === max){ min = Math.max(0,min - 1); max += 1; }
+    const x = index => left + index * ((width-left-right) / Math.max(points.length-1,1));
+    const y = value => top + (max-value) * ((height-top-bottom) / (max-min));
+    const coords = points.map((point,index) => [x(index),y(point.value)]);
+    const line = coords.map(([px,py],index) => `${index ? 'L' : 'M'}${px.toFixed(1)} ${py.toFixed(1)}`).join(' ');
+    const area = `${line} L${coords.at(-1)[0].toFixed(1)} ${height-bottom} L${coords[0][0].toFixed(1)} ${height-bottom} Z`;
+    const grid = [0,.5,1].map(ratio => {
+      const py = top + ratio * (height-top-bottom);
+      const value = Math.round(max-ratio*(max-min));
+      return `<line class="cct-chart-grid" x1="${left}" y1="${py}" x2="${width-right}" y2="${py}"/><text class="cct-chart-label" x="2" y="${py+3}">${escapeHtml(formatMetricNumber(value,locale))}</text>`;
+    }).join('');
+    const labelIndexes = [...new Set([0,Math.floor((points.length-1)/2),points.length-1])];
+    const labels = labelIndexes.map(index => `<text class="cct-chart-label" x="${x(index)}" y="${height-5}" text-anchor="${index===0?'start':index===points.length-1?'end':'middle'}">${escapeHtml(formatChartDate(points[index].date,locale))}</text>`).join('');
+    const dots = coords.map(([px,py]) => `<circle class="cct-chart-dot" cx="${px}" cy="${py}" r="3"/>`).join('');
+    return `<svg class="cct-chart-plot" viewBox="0 0 ${width} ${height}" role="img" aria-label="${escapeHtml(ariaLabel)}">${grid}<path class="cct-chart-area" d="${area}"/><path class="cct-chart-line" d="${line}"/>${dots}${labels}</svg>`;
+  };
+  let dashboardSequence = 0;
+
+  function dashboardMarkup(p, copy, locale){
+    const defs = metricDefinitions(p,copy,locale);
+    if(!defs.length) return null;
+    const id = `cct-dashboard-${++dashboardSequence}`;
+    const cards = defs.map(def => {
+      const canChart = def.points.length > 1;
+      const tag = canChart ? 'button' : 'div';
+      const delta = formatDelta(def.delta,locale);
+      const deltaClass = def.delta < 0 ? ' is-negative' : def.delta === 0 ? ' is-zero' : '';
+      const deltaMarkup = delta ? `<span class="cct-delta${deltaClass}" aria-label="${escapeHtml(copy.deltaLabel(delta))}"><span aria-hidden="true">${escapeHtml(delta)}</span></span>` : '';
+      const accessibleLabel = copy.metricAria(
+        def.title,
+        formatMetricNumber(def.value,locale),
+        delta,
+        canChart,
+      );
+      const attrs = canChart
+        ? ` type="button" data-metric="${def.key}" aria-controls="${id}-chart" aria-expanded="false" aria-label="${escapeHtml(accessibleLabel)}"`
+        : ` role="group" aria-label="${escapeHtml(accessibleLabel)}"`;
+      return `<${tag} class="cct-metric-card${def.primary?' is-primary':''}"${attrs}><span class="cct-metric-top"><span class="ic" aria-hidden="true">${def.icon}</span><strong class="cct-metric-value">${escapeHtml(formatMetricNumber(def.value,locale))}</strong></span>${def.primary?sparkline(def.points):''}<span class="cct-metric-label">${escapeHtml(def.label)}${def.note?`<small class="cct-metric-note">${escapeHtml(def.note)}</small>`:''}</span>${deltaMarkup}</${tag}>`;
+    }).join('');
+    const helpParagraphs = [copy.helpDownloads,copy.helpTraffic,copy.helpUnique]
+      .map(text => `<p>${escapeHtml(text)}</p>`).join('');
+    return {
+      id, defs,
+      html:`<div class="cct-metrics" data-dashboard-id="${id}"><div class="cct-metrics-grid">${cards}</div><button type="button" class="cct-metrics-help" aria-label="${escapeHtml(copy.helpLabel)}" aria-haspopup="dialog" aria-controls="${id}-help"><span aria-hidden="true">?</span></button><section class="cct-chart" id="${id}-chart" hidden aria-live="polite"></section><dialog class="cct-help-dialog" id="${id}-help" aria-labelledby="${id}-help-title"><div class="cct-help-inner"><button type="button" class="cct-help-close" aria-label="${escapeHtml(copy.closeHelp)}"><span aria-hidden="true">×</span></button><h3 id="${id}-help-title">${escapeHtml(copy.helpTitle)}</h3>${helpParagraphs}</div></dialog></div>`,
+    };
+  }
+
+  function bindDashboard(slot, dashboard, copy, locale){
+    const root = slot.querySelector(`[data-dashboard-id="${dashboard.id}"]`);
+    if(!root) return;
+    const chart = root.querySelector('.cct-chart');
+    let activeMetric = null;
+    let activeRange = '30';
+    const renderChart = () => {
+      const def = dashboard.defs.find(item => item.key === activeMetric);
+      if(!def) return;
+      const allPoints = metricPoints(slot.__projectMetrics,def.key);
+      const points = activeRange === 'all' ? allPoints : allPoints.slice(-Number(activeRange));
+      const delta = formatDelta(def.delta,locale);
+      chart.innerHTML = `<div class="cct-chart-head"><div><div class="cct-chart-kicker">${escapeHtml(def.title)}</div><div class="cct-chart-total"><strong>${escapeHtml(formatMetricNumber(def.value,locale))}</strong>${delta?`<span class="cct-delta${def.delta<0?' is-negative':def.delta===0?' is-zero':''}">${escapeHtml(delta)}</span>`:''}</div></div><div class="cct-chart-ranges" role="tablist" aria-label="${escapeHtml(copy.chartRangeLabel)}">${[['7',copy.range7],['30',copy.range30],['all',copy.rangeAll]].map(([value,label]) => `<button type="button" class="cct-chart-range" data-range="${value}" role="tab" aria-selected="${activeRange===value}">${escapeHtml(label)}</button>`).join('')}</div></div>${chartSvg(points,locale,copy.chartAria(def.title,points.length))}<div class="cct-chart-foot">${escapeHtml(def.note || copy.previousDailySnapshot)}</div>`;
+      chart.querySelectorAll('[data-range]').forEach(button => button.addEventListener('click',() => {
+        activeRange = button.dataset.range;
+        renderChart();
+      }));
+    };
+    root.querySelectorAll('[data-metric]').forEach(button => button.addEventListener('click',() => {
+      const same = activeMetric === button.dataset.metric && !chart.hidden;
+      activeMetric = same ? null : button.dataset.metric;
+      chart.hidden = same;
+      root.querySelectorAll('[data-metric]').forEach(card => {
+        const active = !same && card.dataset.metric === activeMetric;
+        card.classList.toggle('is-active',active);
+        card.setAttribute('aria-expanded',String(active));
+      });
+      if(!same) renderChart();
+    }));
+    const helpButton = root.querySelector('.cct-metrics-help');
+    const dialog = root.querySelector('.cct-help-dialog');
+    helpButton.addEventListener('click',() => dialog.showModal());
+    dialog.querySelector('.cct-help-close').addEventListener('click',() => dialog.close());
+    dialog.addEventListener('click',event => { if(event.target === dialog) dialog.close(); });
+  }
 
   function fill(slot, p){
     const githubCopy = window.PortfolioLocale?.UI?.[window.__portfolioLocale || 'de']?.github;
@@ -1905,31 +2116,22 @@ function normalizeGithubRepo(value){
       chips.push(`<span class="chip"><span class="upd">${escapeHtml(updated)}</span></span>`);
     }
     let metrics = '';
+    let dashboard = null;
     if(repo.toLowerCase() === 'ahmojo/codex-claude-transfer'){
       const locale = window.__portfolioLocale || 'de';
       const copy = githubCopy?.metrics;
-      const items = [];
-      if(copy && hasMetric(p.release_downloads)){
-        items.push(metric('↓', copy.releaseDownloads(formatMetricNumber(p.release_downloads, locale))));
-      }
-      if(copy && hasMetric(p.unique_cloners_14d)){
-        items.push(metric('◉', copy.uniqueCloners14d(formatMetricNumber(p.unique_cloners_14d, locale))));
-      }
-      const since = formatTrackedDate(p.tracked_since, locale);
-      if(copy && hasMetric(p.tracked_total_clones) && since){
-        items.push(metric('⑂', copy.trackedTotal(formatMetricNumber(p.tracked_total_clones, locale), since)));
-      }
-      if(copy && hasMetric(p.clones_14d)){
-        items.push(metric('↙', copy.clones14d(formatMetricNumber(p.clones_14d, locale))));
-      }
-      if(items.length){
-        const help = `<button type="button" class="cct-metrics-help" aria-label="${escapeHtml(copy.helpLabel)}" data-tooltip="${escapeHtml(copy.help)}"><span aria-hidden="true">?</span></button>`;
-        metrics = `<div class="cct-metrics">${items.join('')}${help}</div>`;
+      if(copy){
+        dashboard = dashboardMarkup(p,copy,locale);
+        if(dashboard) metrics = dashboard.html;
       }
     }
     slot.className = 'gh-meta';
     slot.innerHTML = chips.join('') + metrics;
     slot.title = p.repo;
+    slot.__projectMetrics = p;
+    if(dashboard){
+      bindDashboard(slot,dashboard,githubCopy.metrics,window.__portfolioLocale || 'de');
+    }
   }
 
   function refresh(){

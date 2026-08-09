@@ -8,6 +8,14 @@ from pydantic import BaseModel, Field
 
 
 # ─── projects ─────────────────────────────────────────────────
+class ProjectMetricSnapshot(BaseModel):
+    date: str
+    release_downloads: Optional[int] = None
+    clones_14d: Optional[int] = None
+    unique_cloners_14d: Optional[int] = None
+    tracked_total_clones: Optional[int] = None
+
+
 class ProjectOut(BaseModel):
     name: str
     repo: str
@@ -26,6 +34,11 @@ class ProjectOut(BaseModel):
     tracked_total_clones: Optional[int] = None
     tracked_since: Optional[str] = None
     metrics_updated_at: Optional[str] = None
+    release_downloads_delta_1d: Optional[int] = None
+    clones_14d_delta_1d: Optional[int] = None
+    unique_cloners_14d_delta_1d: Optional[int] = None
+    tracked_total_clones_delta_1d: Optional[int] = None
+    metrics_history: Optional[list[ProjectMetricSnapshot]] = None
 
 
 # ─── now ──────────────────────────────────────────────────────

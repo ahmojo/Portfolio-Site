@@ -265,6 +265,12 @@ DEFAULT_CONTENT = {
         "ink": "#e6edf8",
         "particles": 72,
     },
+    "cct_metrics": {
+        "release_downloads": True,
+        "tracked_total_clones": True,
+        "unique_cloners_14d": True,
+        "clones_14d": True,
+    },
 }
 
 

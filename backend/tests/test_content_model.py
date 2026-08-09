@@ -98,5 +98,21 @@ class SiteContentOpenSourceTests(unittest.TestCase):
     def test_only_english_translation_key_is_accepted(self):
         with self.assertRaises(ValidationError):
             SiteContent.model_validate({"translations": {"fr": {}}})
+
+    def test_legacy_content_shows_all_cct_metrics_by_default(self):
+        content = SiteContent.model_validate({})
+
+        self.assertTrue(content.cct_metrics.release_downloads)
+        self.assertTrue(content.cct_metrics.tracked_total_clones)
+        self.assertTrue(content.cct_metrics.unique_cloners_14d)
+        self.assertTrue(content.cct_metrics.clones_14d)
+
+    def test_cct_metric_visibility_is_preserved(self):
+        content = SiteContent.model_validate(
+            {"cct_metrics": {"unique_cloners_14d": False}}
+        )
+
+        self.assertFalse(content.cct_metrics.unique_cloners_14d)
+        self.assertTrue(content.cct_metrics.release_downloads)
 if __name__ == "__main__":
     unittest.main()

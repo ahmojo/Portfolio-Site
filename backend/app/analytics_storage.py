@@ -207,6 +207,16 @@ def analytics(days: int = 30) -> dict:
         ).fetchall()
 
     counters = {row["reason"]: int(row["c"]) for row in counter_rows}
+    metric_opens = {
+        "release_downloads": counters.get("metric_open_release_downloads", 0),
+        "tracked_total_clones": counters.get(
+            "metric_open_tracked_total_clones", 0
+        ),
+        "unique_cloners_14d": counters.get(
+            "metric_open_unique_cloners_14d", 0
+        ),
+        "clones_14d": counters.get("metric_open_clones_14d", 0),
+    }
     total_requests = counters.get("page_request", 0)
     confirmed = counters.get("confirmation_received", 0)
     seed_issued = counters.get("seed_issued", 0)
@@ -256,5 +266,6 @@ def analytics(days: int = 30) -> dict:
             }
             for row in recent
         ],
+        "metric_opens": metric_opens,
         "diagnostics": diagnostics,
     }

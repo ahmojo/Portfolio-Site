@@ -117,6 +117,7 @@
     if(window.__SITE_CONTENT && window.__applyLocalizedContent){
       window.__applyLocalizedContent(window.__SITE_CONTENT);
     }
+    if(window.__rerenderProjectMeta) window.__rerenderProjectMeta();
     if(updateUrl){
       try{
         const url = new URL(location.href);

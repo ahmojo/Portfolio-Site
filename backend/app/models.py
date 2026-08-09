@@ -200,6 +200,15 @@ class ThemeContent(BaseModel):
     particles: int = 72
 
 
+class CctMetricsContent(BaseModel):
+    """Shared visibility controls for the CCT usage metric cards."""
+
+    release_downloads: bool = True
+    tracked_total_clones: bool = True
+    unique_cloners_14d: bool = True
+    clones_14d: bool = True
+
+
 class LocalizedSiteContent(BaseModel):
     """Language-specific copy for the public portfolio."""
 
@@ -228,5 +237,6 @@ class SiteContent(BaseModel):
     )
     learning: list[LearnItem] = []
     theme: ThemeContent = ThemeContent()
+    cct_metrics: CctMetricsContent = Field(default_factory=CctMetricsContent)
     open_source_hidden: list[str] = Field(default_factory=list, max_length=500)
     translations: dict[Literal["en"], LocalizedSiteContent] = Field(default_factory=dict)

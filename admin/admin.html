@@ -141,6 +141,16 @@ input[type=color]{width:44px;height:34px;border:1px solid var(--line-2);border-r
 .theme-meta{font-family:var(--mono);font-size:11px;color:var(--ink-mute)}
 .theme-meta b{color:var(--ink)}
 
+/* shared project metric controls */
+.metric-settings{margin-top:22px;padding-top:18px;border-top:1px solid var(--line)}
+.metric-toggle-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}
+.metric-toggle{display:flex;align-items:center;justify-content:space-between;gap:14px;
+  min-width:0;padding:11px 12px;border:1px solid var(--line);border-radius:6px;background:var(--bg)}
+.metric-toggle-copy{min-width:0}
+.metric-toggle-copy b{display:block;color:var(--ink);font:500 12px/1.35 var(--sans)}
+.metric-toggle-copy small{display:block;margin-top:3px;color:var(--ink-faint);font:9.5px/1.35 var(--mono)}
+.metric-toggle input{width:18px;height:18px;flex:0 0 auto;accent-color:var(--acc);cursor:pointer}
+
 /* analytics */
 .an-stats{display:grid;grid-template-columns:repeat(4,1fr);gap:0;
   border-top:1px solid var(--line);border-bottom:1px solid var(--line)}
@@ -175,6 +185,7 @@ input[type=color]{width:44px;height:34px;border:1px solid var(--line-2);border-r
 .fb-empty{color:var(--ink-faint);font-style:italic}
 @media(max-width:640px){
   .an-stats{grid-template-columns:repeat(2,1fr)}
+  .metric-toggle-grid{grid-template-columns:1fr}
   .an-stat:nth-child(2){border-right:none}
   .an-stat:nth-child(1),.an-stat:nth-child(2){border-bottom:1px solid var(--line)}
   .an-cols{grid-template-columns:1fr}
@@ -312,6 +323,16 @@ input[type=color]{width:44px;height:34px;border:1px solid var(--line-2);border-r
         <p class="field-desc">// order = display order. mark one as featured (gets media)</p>
         <div id="projects-list"></div>
         <button class="btn" id="add-project" style="margin-top:10px">+ add project</button>
+        <div class="metric-settings locale-structural">
+          <h3 class="field-title" style="font-size:14px">Codex Claude Transfer metrics</h3>
+          <p class="field-desc">// shared across languages. hidden cards are removed cleanly from the public grid.</p>
+          <div class="metric-toggle-grid" id="cct-metric-settings">
+            <label class="metric-toggle"><span class="metric-toggle-copy"><b>Release downloads</b><small>published platform binaries</small></span><input type="checkbox" data-cct-metric="release_downloads"></label>
+            <label class="metric-toggle"><span class="metric-toggle-copy"><b>Clones since tracking</b><small>cumulative recorded clone operations</small></span><input type="checkbox" data-cct-metric="tracked_total_clones"></label>
+            <label class="metric-toggle"><span class="metric-toggle-copy"><b>Unique clone sources</b><small>last 14 days only</small></span><input type="checkbox" data-cct-metric="unique_cloners_14d"></label>
+            <label class="metric-toggle"><span class="metric-toggle-copy"><b>Clone operations</b><small>last 14 days only</small></span><input type="checkbox" data-cct-metric="clones_14d"></label>
+          </div>
+        </div>
       </div>
 
       <!-- OPEN SOURCE -->
@@ -387,6 +408,16 @@ input[type=color]{width:44px;height:34px;border:1px solid var(--line-2);border-r
           <div class="an-stat"><div class="an-v" id="an-today">0</div><div class="an-l">today</div></div>
         </div>
         <div class="field" style="margin-top:22px">
+          <label>Metric chart opens</label>
+          <p class="field-desc">Anonymous totals in the selected window. These are opens, not unique users, and may include automated access.</p>
+          <div class="an-stats">
+            <div class="an-stat"><div class="an-v" id="an-metric-release">0</div><div class="an-l">release downloads</div></div>
+            <div class="an-stat"><div class="an-v" id="an-metric-total-clones">0</div><div class="an-l">clones since tracking</div></div>
+            <div class="an-stat"><div class="an-v" id="an-metric-unique">0</div><div class="an-l">unique sources · 14d</div></div>
+            <div class="an-stat"><div class="an-v" id="an-metric-clones-14d">0</div><div class="an-l">clone operations · 14d</div></div>
+          </div>
+        </div>
+        <div class="field" style="margin-top:22px">
           <label>Visits over time</label>
           <div class="an-chart-wrap"><svg id="an-chart" class="an-chart" viewBox="0 0 700 160" preserveAspectRatio="none"></svg></div>
         </div>
@@ -412,7 +443,7 @@ input[type=color]{width:44px;height:34px;border:1px solid var(--line-2);border-r
 
 <div id="toast"></div>
 
-<script src="/locale.js?v=20260807-cct-metrics"></script><script src="/locale-content.js?v=20260802-editable-en"></script>
+<script src="/locale.js?v=20260809-cct-controls"></script><script src="/locale-content.js?v=20260802-editable-en"></script>
 <script>
 /* ───────── state ───────── */
 let siteContent = null;
@@ -442,6 +473,7 @@ function createEnglishDraft(){
     : clone(siteContent);
   delete localized.translations;
   delete localized.theme;
+  delete localized.cct_metrics;
   return localized;
 }
 function setEditorLocale(next){
@@ -539,6 +571,13 @@ async function showApp(){
     if(!Array.isArray(siteContent.open_source)){
       siteContent.open_source=DEFAULT_OPEN_SOURCE.map(item=>({...item}));
     }
+    siteContent.cct_metrics={
+      release_downloads:true,
+      tracked_total_clones:true,
+      unique_cloners_14d:true,
+      clones_14d:true,
+      ...(siteContent.cct_metrics||{}),
+    };
     content=siteContent;
     renderAll();
     $('#loading').style.display='none';
@@ -748,6 +787,19 @@ function renderProjects(){
 }
 $('#add-project').addEventListener('click',()=>{if(editorLocale === 'de'){content.projects.push({title:'New Project',desc:'',stack:'',repo:'',featured:false,badges:[]});renderProjects()}});
 
+function renderCctMetricSettings(){
+  if(!siteContent) return;
+  siteContent.cct_metrics=siteContent.cct_metrics||{};
+  $$('[data-cct-metric]').forEach(input=>{
+    const key=input.dataset.cctMetric;
+    input.checked=siteContent.cct_metrics[key]!==false;
+    input.onchange=()=>{
+      siteContent.cct_metrics[key]=input.checked;
+      dirty=true;
+    };
+  });
+}
+
 /* ───────── OPEN SOURCE ───────── */
 function renderOpenSource(){
   const wrap=$('#opensource-list');wrap.innerHTML='';
@@ -884,6 +936,11 @@ async function loadAnalytics(){
     const today = new Date().toISOString().slice(0,10);
     const todayRow = perDay.find(r=>r.date===today);
     $('#an-today').textContent = todayRow ? todayRow.visits : 0;
+    const metricOpens=d.metric_opens||{};
+    $('#an-metric-release').textContent=metricOpens.release_downloads||0;
+    $('#an-metric-total-clones').textContent=metricOpens.tracked_total_clones||0;
+    $('#an-metric-unique').textContent=metricOpens.unique_cloners_14d||0;
+    $('#an-metric-clones-14d').textContent=metricOpens.clones_14d||0;
 
     // chart — filled area path over the per-day series
     drawChart(perDay);
@@ -938,7 +995,7 @@ function drawChart(perDay){
 }
 $('#an-days').addEventListener('change',loadAnalytics);
 
-function renderAll(){renderHero();renderAbout();renderSkills();renderProjects();renderOpenSource();renderLearning();if(editorLocale === 'de') renderTheme()}
+function renderAll(){renderHero();renderAbout();renderSkills();renderProjects();renderCctMetricSettings();renderOpenSource();renderLearning();if(editorLocale === 'de') renderTheme()}
 
 $('#save-btn').addEventListener('click',async()=>{
   const btn=$('#save-btn');btn.disabled=true;btn.textContent='saving…';

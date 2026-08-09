@@ -10,6 +10,7 @@ import logging
 import re
 from datetime import datetime, timezone
 from pathlib import Path
+from typing import Literal
 
 from fastapi import Depends, FastAPI, File, HTTPException, Request, UploadFile
 from fastapi.middleware.cors import CORSMiddleware
@@ -20,6 +21,7 @@ from pydantic import BaseModel, Field
 from . import analytics_security, db, feedback_storage
 from .analytics_security import (
     InvalidAnalyticsToken,
+    SlidingWindowRateLimiter,
     TURNSTILE_ACTION,
     confirm_rate_limiter,
     create_analytics_seed,
@@ -79,6 +81,18 @@ _ANALYTICS_COOKIE_PATH = "/api/analytics/confirm"
 class AnalyticsConfirmIn(BaseModel):
     path: str = Field(min_length=1, max_length=255)
     turnstile_token: str = Field(default="", max_length=4096)
+
+
+class MetricOpenIn(BaseModel):
+    metric: Literal[
+        "release_downloads",
+        "tracked_total_clones",
+        "unique_cloners_14d",
+        "clones_14d",
+    ]
+
+
+metric_open_rate_limiter = SlidingWindowRateLimiter()
 
 
 def _valid_analytics_path(
@@ -420,6 +434,33 @@ def create_app() -> FastAPI:
             media_type="application/javascript",
             headers={"Cache-Control": "private, max-age=300"},
         )
+
+    @app.post("/api/analytics/metric-open", status_code=204)
+    def record_metric_open(payload: MetricOpenIn, request: Request):
+        """Count a chart opening without storing a visitor identity."""
+        if not _analytics_origin_is_valid(request):
+            raise HTTPException(status_code=403, detail="invalid_origin")
+        if not _confirm_fetch_metadata_is_valid(request):
+            raise HTTPException(status_code=403, detail="invalid_fetch_metadata")
+        if (
+            request.headers.get("dnt", "") == "1"
+            or request.headers.get("sec-gpc", "") == "1"
+        ):
+            return Response(status_code=204)
+
+        _, client_ip, trusted_proxy = _request_client_ip(request)
+        if _verified_bot(request, trusted_proxy):
+            raise HTTPException(status_code=403, detail="known_bot")
+        visitor_key = daily_visitor_hash(client_ip, db.get_session_secret())
+        if not visitor_key or not metric_open_rate_limiter.allow(
+            visitor_key,
+            limit=30,
+            window_seconds=60,
+        ):
+            raise HTTPException(status_code=429, detail="rate_limited")
+
+        increment_counter(f"metric_open_{payload.metric}")
+        return Response(status_code=204)
 
     @app.post("/api/analytics/confirm")
     async def confirm_analytics(payload: AnalyticsConfirmIn, request: Request):

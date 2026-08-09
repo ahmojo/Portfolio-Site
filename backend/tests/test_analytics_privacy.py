@@ -10,7 +10,12 @@ from fastapi.testclient import TestClient
 from app import analytics_storage, db
 from app.analytics_security import TurnstileResult, confirm_rate_limiter
 from app.config import settings
-from app.main import _is_likely_human_page_view, _security_headers, create_app
+from app.main import (
+    _is_likely_human_page_view,
+    _security_headers,
+    create_app,
+    metric_open_rate_limiter,
+)
 
 
 PAGE_HEADERS = {
@@ -52,6 +57,7 @@ class AnalyticsStorageTests(unittest.TestCase):
         settings.session_secret = "test-session-secret-with-at-least-32-characters"
         settings.secure_cookies = False
         confirm_rate_limiter.clear()
+        metric_open_rate_limiter.clear()
         db.init_db()
         analytics_storage.init_analytics_schema()
 
@@ -60,6 +66,7 @@ class AnalyticsStorageTests(unittest.TestCase):
         for name, value in self.original_settings.items():
             setattr(settings, name, value)
         confirm_rate_limiter.clear()
+        metric_open_rate_limiter.clear()
         self.temp_dir.cleanup()
 
     def _client(self):
@@ -397,6 +404,62 @@ class AnalyticsStorageTests(unittest.TestCase):
             csp,
         )
         self.assertIn("frame-src https://challenges.cloudflare.com", csp)
+
+    def test_metric_chart_open_is_an_anonymous_aggregate_counter(self):
+        with patch(
+            "app.main.resolve_client_ip", return_value="198.51.100.30"
+        ):
+            with self._client() as client:
+                for _ in range(2):
+                    response = client.post(
+                        "/api/analytics/metric-open",
+                        headers=CONFIRM_HEADERS,
+                        json={"metric": "release_downloads"},
+                    )
+
+        self.assertEqual(response.status_code, 204)
+        result = analytics_storage.analytics(30)
+        self.assertEqual(result["metric_opens"]["release_downloads"], 2)
+        self.assertEqual(result["confirmed_pageviews"], 0)
+
+    def test_metric_chart_open_rejects_unknown_metric_and_cross_origin(self):
+        with self._client() as client:
+            unknown = client.post(
+                "/api/analytics/metric-open",
+                headers=CONFIRM_HEADERS,
+                json={"metric": "all_time_unique_cloners"},
+            )
+            cross_origin = client.post(
+                "/api/analytics/metric-open",
+                headers={**CONFIRM_HEADERS, "origin": "https://evil.example"},
+                json={"metric": "clones_14d"},
+            )
+
+        self.assertEqual(unknown.status_code, 422)
+        self.assertEqual(cross_origin.status_code, 403)
+        self.assertEqual(
+            analytics_storage.analytics(30)["metric_opens"]["clones_14d"],
+            0,
+        )
+
+    def test_metric_chart_open_respects_browser_privacy_opt_out(self):
+        with patch(
+            "app.main.resolve_client_ip", return_value="198.51.100.31"
+        ):
+            with self._client() as client:
+                response = client.post(
+                    "/api/analytics/metric-open",
+                    headers={**CONFIRM_HEADERS, "dnt": "1"},
+                    json={"metric": "unique_cloners_14d"},
+                )
+
+        self.assertEqual(response.status_code, 204)
+        self.assertEqual(
+            analytics_storage.analytics(30)["metric_opens"][
+                "unique_cloners_14d"
+            ],
+            0,
+        )
 
 
 if __name__ == "__main__":

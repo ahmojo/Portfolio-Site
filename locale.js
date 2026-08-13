@@ -221,91 +221,83 @@
     projects: {
       'regal-erkennung': {
         title: 'Shelf recognition for SMEs',
-        desc: 'Baden Hackt 2026 — a system that uses <b style="color:var(--acc)">YOLOv11n-cls</b> to recognize products on a shelf. When a product is removed, it automatically sends a reorder email with a CSV attachment.',
+        desc: 'A hackathon prototype for small businesses. A webcam and <b style="color:var(--acc)">YOLOv11n-cls</b> check shelf positions. If a product is missing across repeated scans, the backend can send a reorder email with a CSV attachment.',
         stack: 'Python · FastAPI · YOLOv11n-cls · OpenCV · uvicorn',
         content: (
-          '## The problem\n'
-          + 'Small businesses often cannot afford professional shelf-monitoring systems. Empty shelves can go unnoticed until a customer points them out.\n\n'
-          + '## Approach\n'
-          + 'A webcam watches the shelf. A **YOLOv11n-cls** model classifies each shelf section as full or empty in every frame. When a product is removed, FastAPI automatically sends a reorder email with a CSV attachment — fully automated replenishment.\n\n'
-          + '## What I learned\n'
-          + '- Real-time inference is often about knowing *which frames not to infer on*.\n'
-          + '- The real value appears where ML output becomes an ordinary business action: an email.\n\n'
-          + '> Built in ~24h at **Baden Hackt 2026**.'
+          '## Project\n'
+          + 'My team built a shelf monitor for small businesses at Baden Hackt 2026. A webcam checks whether products are visible in configured shelf positions.\n\n'
+          + '## Flow\n'
+          + '- The browser selects the camera and defines the shelf positions.\n'
+          + '- **YOLOv11n-cls** detects visible products.\n'
+          + '- **FastAPI** processes scans and can send a reorder email with a CSV attachment.\n\n'
+          + '## Status\n'
+          + 'This is a hackathon prototype. Model weights and demo files are kept outside the repository because of their size.'
         ),
       },
       portfolio: {
         title: 'This portfolio',
-        desc: 'No template — the frontend talks to its own <b style="color:var(--acc)">FastAPI</b> backend: live GitHub stats, project metadata, an admin panel for editing content and uptime monitoring. Deployed on a self-managed Oracle Cloud VM.',
+        desc: 'My portfolio site with its own <b style="color:var(--acc)">FastAPI</b> backend. The backend serves content, GitHub data and status values. An admin area manages the text. Docker runs the app on an Oracle Cloud VM.',
         stack: 'Python · FastAPI · SQLite · Docker · Oracle Cloud · Cloudflare',
         content: (
-          '## The idea\n'
-          + 'Most portfolios are static. This one is a small full-stack project: the content, GitHub statistics and project metadata come from its own backend.\n\n'
-          + '## Stack\n'
-          + '- **FastAPI** serves content, GitHub stats, project metadata and uptime status.\n'
-          + '- **SQLite** stores editable content; an admin panel updates it through the API.\n'
-          + '- **Docker** runs on an **Oracle Cloud VM**, served behind **Cloudflare**.\n\n'
-          + '## What I learned\n'
-          + '- How to structure a FastAPI backend with routers, authentication and database access.\n'
-          + '- HMAC-signed session cookies and rate limiting for the admin login.\n'
-          + '- Deployment and operations: Docker, reverse proxy and monitoring.'
+          '## Structure\n'
+          + 'The frontend loads page content and project data from a FastAPI API. The backend also provides GitHub and uptime data.\n\n'
+          + '## Management\n'
+          + 'A protected admin area edits the content. SQLite stores it on the VM.\n\n'
+          + '## Hosting\n'
+          + 'Docker runs the app on an Oracle Cloud VM. Cloudflare handles DNS, HTTPS and caching. The backend stores reduced analytics data and does not retain full IP addresses.'
         ),
       },
       'codex-claude-transfer': {
         title: 'Codex Claude Transfer',
-        desc: 'A local CLI tool (<b style="color:var(--acc)">cct</b>) that transfers Codex and Claude Code sessions between machines. Export, copy and import sessions as <code>.codexbundle</code> files — no cloud, account or server. Optional LAN sync.',
+        desc: '<b style="color:var(--acc)">cct</b> moves local Codex and Claude Code sessions between machines. It exports them as a <code>.codexbundle</code>, verifies the file and imports it at the destination. It needs no cloud service by default.',
         stack: 'Go · Cobra · Indexed State · Local-Only',
         content: (
-          '## The problem\n'
-          + 'Anyone working with [Codex](https://github.com/openai/codex) or [Claude Code](https://github.com/anthropics/claude-code) on multiple machines needs a simple way to move sessions between them.\n\n'
-          + '## Approach\n'
-          + '`cct` is a small, entirely local CLI. Export a project\'s sessions into one `.codexbundle` file, copy it however you like (USB drive, `scp`, Syncthing or an encrypted disk), then import it on another machine. **No cloud, no account, no server** — and the agent\'s index/state stays untouched.\n\n'
+          '## Purpose\n'
+          + 'Codex and Claude Code store sessions on the local machine. `cct` packages a project\'s sessions so you can continue them on another computer.\n\n'
+          + '## Usage\n'
+          + '```\n'
+          + 'cct export --project .\n'
+          + 'cct import ./project.codexbundle --dry-run\n'
+          + 'cct import ./project.codexbundle\n'
+          + '```\n\n'
           + '## Features\n'
-          + '- Works with **Codex** *and* **Claude Code**, including cross-agent handoff\n'
-          + '- Incremental sync: only new content is appended, nothing is overwritten\n'
-          + '- Secret scan and redaction before export\n'
-          + '- Optional bundle encryption\n'
-          + '- Experimental LAN sync between explicitly paired devices\n\n'
-          + '> Written in Go with [Cobra](https://github.com/spf13/cobra).'
+          + '- Export and import for Codex and Claude Code\n'
+          + '- Handoff between both agents\n'
+          + '- CLI, terminal wizard and local browser app\n'
+          + '- Secret scanning, optional encryption and LAN sync\n\n'
+          + '## Note\n'
+          + 'Bundles can contain prompts, code and credentials. Treat them as private work data.'
         ),
       },
       'cli-agent': {
         title: 'CLI agent with tool use',
-        desc: 'A CLI chatbot that uses function calling through the Google Gemini API. It can read and write files and run Python files in a restricted workspace — built as a learning project for the Boot.dev AI agent course.',
+        desc: 'A learning project from the Boot.dev course. A Python program sends tasks to Gemini and provides four local tools. The agent can read, change and run Python files inside the example folder.',
         stack: 'Python · Google GenAI SDK · Function Calling · uv',
         content: (
-          '## The problem\n'
-          + 'How does function calling actually work? How do you build an agent that calls tools on its own instead of only returning text?\n\n'
-          + '## Approach\n'
-          + 'A command-line program sends a prompt to Gemini and allows the model to call a small set of local tools:\n'
+          '## Purpose\n'
+          + 'I used this Boot.dev project to practise function calling with the Gemini API. The terminal program gives the model four tools:\n'
           + '- list files and directories\n'
           + '- read file contents\n'
           + '- write or overwrite files\n'
           + '- run Python files with arguments\n\n'
-          + 'The tools are deliberately limited to `./calculator`, so the agent operates in a safe sandbox. The GenAI SDK registers the function declarations and dispatches model calls through `call_function.py`.\n\n'
-          + '## What I learned\n'
-          + '- How to structure a function-calling loop until a text response or iteration limit\n'
-          + '- Why a restricted workspace is essential for safety\n\n'
-          + '> Built during the [Boot.dev](https://www.boot.dev/) AI agent course.'
+          + 'The tools only access `./calculator`. `call_function.py` maps each model request to the matching Python function.\n\n'
+          + '## Limitation\n'
+          + 'The repository is a learning exercise, not a finished coding agent. Model-driven file changes and Python execution remain risky.'
         ),
       },
       'machine-learning': {
         title: 'Machine Learning',
-        desc: 'A machine-learning school project (LB-259): predicting California house prices as a regression problem. Data analysis, model training and evaluation in Jupyter notebooks with scikit-learn.',
+        desc: 'A school project that predicts median house values in California. Three Jupyter notebooks cover data description, model training and evaluation with scikit-learn.',
         stack: 'Python · Jupyter · scikit-learn · Pandas',
         content: (
           '## Task\n'
-          + 'Predict the median house value (`median_house_value`) from features such as income, age, room count and proximity to the ocean — a classic **regression problem**.\n\n'
+          + 'A regression model predicts an area\'s median house value (`median_house_value`). Inputs include income, age, room count and location.\n\n'
           + '## Dataset\n'
-          + 'California Housing Prices (StatLib / 1990 California census, CC0). It contains geographic, demographic and economic features for each area.\n\n'
-          + '## Process\n'
-          + '- **Data analysis** (`data_description.ipynb`): distributions, correlations and outliers\n'
-          + '- **Model** (`model.ipynb`): training with scikit-learn\n'
-          + '- **Evaluation** (`evaluation.ipynb`): metrics and error analysis\n\n'
-          + '## What I learned\n'
-          + '- How a complete ML project moves from raw data to evaluation\n'
-          + '- The role feature selection and data preprocessing play\n\n'
-          + '> School project, LB-259 — my first real contact with machine learning.'
+          + 'The project uses the California Housing Prices dataset from StatLib and the 1990 California census. The rows describe areas and contain no names or contact details.\n\n'
+          + '## Notebooks\n'
+          + '- `data_description.ipynb` describes and checks the data.\n'
+          + '- `model.ipynb` prepares the data and trains the model.\n'
+          + '- `evaluation.ipynb` evaluates the predictions.'
         ),
       },
     },

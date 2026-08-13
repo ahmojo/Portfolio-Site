@@ -1782,7 +1782,7 @@ button.cct-metric-card:active{transform:translateY(1px)}
 
 <div id="toast" role="status" aria-live="polite"></div>
 
-<script src="locale.js?v=20260809-cct-controls"></script><script src="locale-content.js?v=20260802-editable-en"></script><script src="locale-controller.js?v=20260809-cct-controls"></script><script src="locale-fixes.js?v=20260802-editable-en"></script><script src="locale-runtime-fixes.js?v=20260802-editable-en"></script><script data-cfasync="false" src="/cdn-cgi/scripts/5c5dd728/cloudflare-static/email-decode.min.js"></script><script>
+<script src="locale.js?v=20260813-project-copy"></script><script src="locale-content.js?v=20260802-editable-en"></script><script src="locale-controller.js?v=20260813-project-copy"></script><script src="locale-fixes.js?v=20260802-editable-en"></script><script src="locale-runtime-fixes.js?v=20260802-editable-en"></script><script data-cfasync="false" src="/cdn-cgi/scripts/5c5dd728/cloudflare-static/email-decode.min.js"></script><script>
 const RM = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 
 /* ─── API + toast helpers ─────────────────────────── */
@@ -2699,8 +2699,10 @@ function normalizeGithubRepo(value){
       const ghLink = repo ? `<a href="https://github.com/${esc(repo)}" target="_blank" rel="noopener" class="github-link">GitHub <span class="arr">↗</span></a>` : '';
       const meta = repo ? `<div class="gh-meta empty" data-repo="${esc(repo)}"><span class="gh-skel"></span></div>` : '';
       // deep-dive link shown when the project has a slug + a markdown writeup
+      const projectLocale = window.__portfolioLocale === 'en' ? '?lang=en' : '';
+      const readMoreLabel = window.__portfolioLocale === 'en' ? 'read more' : 'mehr lesen';
       const deepLink = (p.slug && p.content && p.content.trim())
-        ? `<a href="/p/${esc(p.slug)}" class="proj-deep">read more <span class="arr">→</span></a>` : '';
+        ? `<a href="/p/${esc(p.slug)}${projectLocale}" class="proj-deep">${readMoreLabel} <span class="arr">→</span></a>` : '';
       if(p.featured){
         const media = p.media ? `<div class="feat-media"><video src="${esc(p.media)}" controls muted playsinline preload="metadata" onloadedmetadata="if(this.duration){this.currentTime=Math.min(0.05,this.duration/2)}"></video></div>` : '';
         return `<article class="proj feat" data-stagger>

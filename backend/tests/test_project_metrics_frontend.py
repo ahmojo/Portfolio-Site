@@ -70,6 +70,14 @@ def test_locale_switch_rerenders_metrics_without_refetching_content():
     assert "window.__rerenderProjectMeta = () =>" in html
 
 
+def test_project_writeup_link_carries_the_selected_language():
+    html = (ROOT / "index.html").read_text(encoding="utf-8")
+
+    assert "window.__portfolioLocale === 'en' ? '?lang=en' : ''" in html
+    assert "window.__portfolioLocale === 'en' ? 'read more' : 'mehr lesen'" in html
+    assert '`<a href="/p/${esc(p.slug)}${projectLocale}"' in html
+
+
 def test_admin_can_hide_each_metric_and_chart_opens_are_aggregated():
     admin = (ROOT / "admin" / "admin.html").read_text(encoding="utf-8")
     html = (ROOT / "index.html").read_text(encoding="utf-8")

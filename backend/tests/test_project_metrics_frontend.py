@@ -99,6 +99,13 @@ def test_changed_locale_scripts_use_current_cache_versions():
     assert "20260813-project-copy" not in page
 
 
+def test_project_page_uses_a_solid_background():
+    page = (ROOT / "p" / "page.html").read_text(encoding="utf-8")
+
+    assert "background:var(--bg);" in page
+    assert "radial-gradient" not in page
+
+
 def test_admin_can_hide_each_metric_and_chart_opens_are_aggregated():
     admin = (ROOT / "admin" / "admin.html").read_text(encoding="utf-8")
     html = (ROOT / "index.html").read_text(encoding="utf-8")

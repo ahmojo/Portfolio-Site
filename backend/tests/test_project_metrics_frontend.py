@@ -88,6 +88,17 @@ def test_project_page_localizes_the_api_payload_before_rendering():
     assert "?lang='+encodeURIComponent(projectLocale)" in page
 
 
+def test_changed_locale_scripts_use_current_cache_versions():
+    index = (ROOT / "index.html").read_text(encoding="utf-8")
+    page = (ROOT / "p" / "page.html").read_text(encoding="utf-8")
+
+    assert 'locale.js?v=20260817-project-pages' in index
+    assert 'locale-controller.js?v=20260817-project-pages' in index
+    assert 'locale.js?v=20260817-project-pages' in page
+    assert "20260813-project-copy" not in index
+    assert "20260813-project-copy" not in page
+
+
 def test_admin_can_hide_each_metric_and_chart_opens_are_aggregated():
     admin = (ROOT / "admin" / "admin.html").read_text(encoding="utf-8")
     html = (ROOT / "index.html").read_text(encoding="utf-8")

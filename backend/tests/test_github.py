@@ -1,6 +1,8 @@
 from __future__ import annotations
 
+import json
 import unittest
+from pathlib import Path
 from unittest.mock import AsyncMock, patch
 
 import httpx
@@ -30,6 +32,18 @@ def release(*assets, draft=False):
 
 class GithubMetadataTests(unittest.IsolatedAsyncioTestCase):
     def setUp(self):
+        self.cache_path = (
+            Path.cwd() / f".test-cct-release-downloads-{id(self)}.json"
+        )
+        self.original_release_cache_path = github._CCT_RELEASE_CACHE_PATH
+        github._CCT_RELEASE_CACHE_PATH = self.cache_path
+        self.addCleanup(
+            setattr,
+            github,
+            "_CCT_RELEASE_CACHE_PATH",
+            self.original_release_cache_path,
+        )
+        self.addCleanup(self.cache_path.unlink, missing_ok=True)
         github._cache.clear()
         github._cache_ts.clear()
         github._usage_cache.clear()
@@ -128,6 +142,102 @@ class GithubMetadataTests(unittest.IsolatedAsyncioTestCase):
         self.assertEqual(requested_pages, [1, 2])
 
     async def test_release_fetch_returns_none_on_error(self):
+        async with httpx.AsyncClient(
+            transport=httpx.MockTransport(
+                lambda request: httpx.Response(503)
+            )
+        ) as client:
+            self.assertIsNone(await fetch_release_downloads(client))
+
+    async def test_release_fetch_persists_a_legitimate_zero(self):
+        async with httpx.AsyncClient(
+            transport=httpx.MockTransport(
+                lambda request: httpx.Response(200, json=[])
+            )
+        ) as client:
+            self.assertEqual(await fetch_release_downloads(client), 0)
+
+        self.assertEqual(
+            json.loads(github._CCT_RELEASE_CACHE_PATH.read_text(encoding="utf-8")),
+            {
+                "schema_version": 1,
+                "repo": github._CCT_REPO,
+                "release_downloads": 0,
+            },
+        )
+
+    async def test_release_fetch_keeps_higher_cache_on_lower_success(self):
+        github._CCT_RELEASE_CACHE_PATH.write_text(
+            json.dumps(
+                {
+                    "schema_version": 1,
+                    "repo": github._CCT_REPO,
+                    "release_downloads": 23,
+                }
+            ),
+            encoding="utf-8",
+        )
+        async with httpx.AsyncClient(
+            transport=httpx.MockTransport(
+                lambda request: httpx.Response(200, json=[])
+            )
+        ) as client:
+            self.assertEqual(await fetch_release_downloads(client), 23)
+
+        payload = json.loads(
+            github._CCT_RELEASE_CACHE_PATH.read_text(encoding="utf-8")
+        )
+        self.assertEqual(payload["release_downloads"], 23)
+
+    async def test_release_fetch_uses_persisted_cache_after_restart(self):
+        async with httpx.AsyncClient(
+            transport=httpx.MockTransport(
+                lambda request: httpx.Response(
+                    200,
+                    json=[release(("cct_v1.8.0_linux_amd64.tar.gz", 23))],
+                )
+            )
+        ) as client:
+            self.assertEqual(await fetch_release_downloads(client), 23)
+
+        # A process restart loses the in-memory usage cache but leaves data/.
+        github._usage_cache.clear()
+        async with httpx.AsyncClient(
+            transport=httpx.MockTransport(
+                lambda request: httpx.Response(503)
+            )
+        ) as client:
+            self.assertEqual(await fetch_release_downloads(client), 23)
+
+    async def test_release_fetch_prefers_existing_memory_cache_on_error(self):
+        github._usage_cache[github._CCT_REPO] = {"release_downloads": 23}
+        github._CCT_RELEASE_CACHE_PATH.write_text(
+            json.dumps(
+                {
+                    "schema_version": 1,
+                    "repo": github._CCT_REPO,
+                    "release_downloads": 7,
+                }
+            ),
+            encoding="utf-8",
+        )
+        async with httpx.AsyncClient(
+            transport=httpx.MockTransport(
+                lambda request: httpx.Response(503)
+            )
+        ) as client:
+            self.assertEqual(await fetch_release_downloads(client), 23)
+
+    async def test_release_fetch_ignores_corrupt_persisted_cache(self):
+        github._CCT_RELEASE_CACHE_PATH.write_text("not-json", encoding="utf-8")
+        async with httpx.AsyncClient(
+            transport=httpx.MockTransport(
+                lambda request: httpx.Response(503)
+            )
+        ) as client:
+            self.assertIsNone(await fetch_release_downloads(client))
+
+    async def test_release_fetch_returns_none_without_any_known_value(self):
         async with httpx.AsyncClient(
             transport=httpx.MockTransport(
                 lambda request: httpx.Response(503)

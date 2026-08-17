@@ -1,4 +1,4 @@
-"""GitHub client + in-memory cache.
+"""GitHub client with memory and persistent caches.
 
 Keeps the project list responsive and avoids hammering the GitHub API
 (anonymous rate limit is 60 req/h per IP).
@@ -6,10 +6,14 @@ Keeps the project list responsive and avoids hammering the GitHub API
 from __future__ import annotations
 
 import asyncio
+import json
 import logging
+import os
 import re
+import tempfile
 import time
 from datetime import date
+from pathlib import Path
 from typing import Any, Optional
 
 import httpx
@@ -24,6 +28,10 @@ _CCT_METRICS_URL = (
     "https://raw.githubusercontent.com/ahmojo/codex-claude-transfer/"
     "metrics/metrics/traffic.json"
 )
+_CCT_RELEASE_CACHE_PATH = (
+    Path(__file__).resolve().parents[1] / "data" / "cct-release-downloads.json"
+)
+_CCT_RELEASE_CACHE_SCHEMA_VERSION = 1
 _USAGE_TTL = 3600
 _BINARY_ASSET_RE = re.compile(
     r"^(?:cct|codex-sync)_v[^_]+_(?:linux|darwin|windows)_"
@@ -64,6 +72,127 @@ def _headers() -> dict[str, str]:
     if settings.github_token:
         h["Authorization"] = f"Bearer {settings.github_token}"
     return h
+
+
+def _read_persisted_release_downloads() -> Optional[int]:
+    """Read the last known CCT release count, if a valid cache exists."""
+    path = Path(_CCT_RELEASE_CACHE_PATH)
+    try:
+        raw = path.read_text(encoding="utf-8")
+    except FileNotFoundError:
+        return None
+    except OSError as exc:
+        log.warning("CCT release-download cache read failed: %s", exc)
+        return None
+
+    try:
+        payload = json.loads(raw)
+    except (TypeError, json.JSONDecodeError) as exc:
+        log.warning("CCT release-download cache is invalid: %s", exc)
+        return None
+
+    if not isinstance(payload, dict):
+        log.warning("CCT release-download cache is invalid: expected an object")
+        return None
+    schema_version = payload.get("schema_version")
+    if schema_version is not None and (
+        not isinstance(schema_version, int)
+        or isinstance(schema_version, bool)
+        or schema_version != _CCT_RELEASE_CACHE_SCHEMA_VERSION
+    ):
+        log.warning("CCT release-download cache has an unsupported schema")
+        return None
+    repo = payload.get("repo")
+    if repo is not None and str(repo).lower() != _CCT_REPO:
+        log.warning("CCT release-download cache belongs to an unexpected repo")
+        return None
+
+    value = _optional_non_negative_int(payload.get("release_downloads"))
+    if value is None:
+        log.warning("CCT release-download cache has no valid count")
+    return value
+
+
+def _known_release_downloads() -> Optional[int]:
+    """Return the highest valid value known in memory or on disk."""
+    in_memory = _optional_non_negative_int(
+        _usage_cache.get(_CCT_REPO, {}).get("release_downloads")
+    )
+    persisted = _read_persisted_release_downloads()
+    if in_memory is None:
+        return persisted
+    if persisted is None:
+        return in_memory
+    return max(in_memory, persisted)
+
+
+def _persist_release_downloads(value: Any) -> None:
+    """Atomically persist a validated release count without storing secrets."""
+    count = _optional_non_negative_int(value)
+    if count is None:
+        return
+
+    path = Path(_CCT_RELEASE_CACHE_PATH)
+    temporary_path: Optional[Path] = None
+    try:
+        path.parent.mkdir(parents=True, exist_ok=True)
+        fd, temporary_name = tempfile.mkstemp(
+            prefix=f".{path.name}.",
+            suffix=".tmp",
+            dir=str(path.parent),
+        )
+        temporary_path = Path(temporary_name)
+        try:
+            with os.fdopen(fd, "w", encoding="utf-8") as handle:
+                json.dump(
+                    {
+                        "schema_version": _CCT_RELEASE_CACHE_SCHEMA_VERSION,
+                        "repo": _CCT_REPO,
+                        "release_downloads": count,
+                    },
+                    handle,
+                    separators=(",", ":"),
+                )
+                handle.flush()
+                os.fsync(handle.fileno())
+        except BaseException:
+            # fdopen owns the descriptor after it succeeds; this closes it if
+            # opening the wrapper itself failed.
+            try:
+                os.close(fd)
+            except OSError:
+                pass
+            raise
+
+        os.replace(temporary_path, path)
+
+        # On platforms that support it, flush the directory entry as well.
+        # Windows does not allow opening a directory this way, so the file
+        # fsync + atomic replace above remains the portable fallback.
+        if os.name != "nt":
+            try:
+                directory_fd = os.open(
+                    str(path.parent),
+                    os.O_RDONLY | getattr(os, "O_DIRECTORY", 0),
+                )
+            except OSError:
+                directory_fd = None
+            if directory_fd is not None:
+                try:
+                    os.fsync(directory_fd)
+                finally:
+                    os.close(directory_fd)
+    except OSError as exc:
+        # A cache write failure must never hide a valid live API value.
+        log.warning("CCT release-download cache write failed: %s", exc)
+    finally:
+        if temporary_path is not None:
+            try:
+                temporary_path.unlink()
+            except FileNotFoundError:
+                pass
+            except OSError:
+                pass
 
 
 async def fetch_repo(client: httpx.AsyncClient, repo: str) -> Optional[dict]:
@@ -125,11 +254,22 @@ async def fetch_release_downloads(
                         ):
                             total += count
             if len(releases) < 100:
+                if repo.lower() == _CCT_REPO:
+                    known = _known_release_downloads()
+                    if known is not None and total < known:
+                        log.warning(
+                            "Ignoring lower CCT release-download count (%s < %s)",
+                            total,
+                            known,
+                        )
+                        return known
+                if repo.lower() == _CCT_REPO:
+                    _persist_release_downloads(total)
                 return total
             page += 1
     except Exception as exc:
         log.warning("GitHub release fetch failed for %s: %s", repo, exc)
-        return None
+        return _known_release_downloads() if repo.lower() == _CCT_REPO else None
 
 
 def _optional_non_negative_int(value: Any) -> Optional[int]:
@@ -234,7 +374,21 @@ async def fetch_cct_usage(client: httpx.AsyncClient) -> dict[str, Any]:
     if traffic is not None:
         result.update(traffic)
     if release_downloads is not None:
-        result["release_downloads"] = release_downloads
+        traffic_downloads = _optional_non_negative_int(
+            result.get("release_downloads")
+        )
+        result["release_downloads"] = (
+            max(release_downloads, traffic_downloads)
+            if traffic_downloads is not None
+            else release_downloads
+        )
+    release_downloads = _optional_non_negative_int(
+        result.get("release_downloads")
+    )
+    if release_downloads is not None:
+        # Persist only after both sources have resolved so a slower traffic
+        # request cannot overwrite a newer count from the releases API.
+        _persist_release_downloads(release_downloads)
     history = result.get("metrics_history")
     if isinstance(history, list):
         result.update(_daily_metric_deltas(result, history))

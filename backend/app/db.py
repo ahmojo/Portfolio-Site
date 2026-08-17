@@ -117,7 +117,7 @@ DEFAULT_CONTENT = {
     "projects": [
         {
             "title": "Regal-Erkennung für KMU",
-            "desc": "Hackathon-Prototyp für kleine Betriebe. Eine Webcam und <b style=\"color:var(--acc)\">YOLOv11n-cls</b> prüfen Regalplätze. Fehlt ein Produkt bei mehreren Scans, kann das Backend eine Bestellmail mit CSV-Anhang senden.",
+            "desc": "Hackathon-Prototyp für kleine Betriebe. Eine Webcam prüft mit <b style=\"color:var(--acc)\">YOLOv11n-cls</b> eingerichtete Regalplätze. Fehlt ein Produkt bei mehreren Scans, kann FastAPI eine Bestellmail mit CSV-Anhang senden.",
             "stack": "Python · FastAPI · YOLOv11n-cls · OpenCV · uvicorn",
             "repo": "ahmojo/Badenhackt_KMU_Trifft_KI",
             "featured": True,
@@ -128,28 +128,29 @@ DEFAULT_CONTENT = {
             ],
             "slug": "regal-erkennung",
             "content": (
-                "## Projekt\n"
-                "Beim Baden Hackt 2026 habe ich mit meinem Team einen Regalmonitor für kleine Betriebe gebaut. "
-                "Eine Webcam prüft, ob Produkte an den eingerichteten Regalplätzen sichtbar sind.\n\n"
-                "## Ablauf\n"
-                "- Der Browser wählt die Kamera und legt die Regalplätze fest.\n"
-                "- **YOLOv11n-cls** erkennt die sichtbaren Produkte.\n"
-                "- **FastAPI** verarbeitet die Scans und kann eine Bestellmail mit CSV-Anhang senden.\n\n"
+                "## Problem\n"
+                "Leere Regalplätze werden leicht übersehen. Der Prototyp erkennt fehlende Produkte bei wiederholten Kamerascans und kann eine Nachbestellung auslösen.\n\n"
+                "## Architektur\n"
+                "Der Browser wählt Kamera und Regalplätze. **YOLOv11n-cls** klassifiziert sichtbare Produkte. "
+                "**FastAPI** verarbeitet die Scans und kann eine Bestellmail mit CSV-Anhang senden.\n\n"
                 "## Stand\n"
-                "Das Projekt ist ein Hackathon-Prototyp. Modellgewichte und Demo-Dateien liegen wegen ihrer Größe nicht im Repository."
+                "Hackathon-Prototyp. Modellgewichte und Demo-Dateien liegen wegen ihrer Größe nicht im Repository."
             ),
         },
         {
             "title": "Codex Claude Transfer",
-            "desc": "<b style=\"color:var(--acc)\">cct</b> überträgt lokale Codex- und Claude-Code-Sitzungen zwischen Rechnern. Es exportiert sie als <code>.codexbundle</code>, prüft die Datei und importiert sie am Ziel. Standardmäßig braucht es keinen Cloud-Dienst.",
+            "desc": "<b style=\"color:var(--acc)\">cct</b> überträgt lokale Codex- und Claude-Code-Sitzungen zwischen Rechnern. Es bündelt sie als <code>.codexbundle</code>, prüft die Prüfsumme und importiert sie am Ziel. Standardmäßig braucht es keinen Cloud-Dienst.",
             "stack": "Go · Cobra · Indexed State · Local-Only",
             "repo": "ahmojo/codex-claude-transfer",
             "featured": False,
             "badges": [{"label": "Go · CLI", "variant": "py"}],
             "slug": "codex-claude-transfer",
             "content": (
-                "## Zweck\n"
-                "Codex und Claude Code speichern Sitzungen lokal. `cct` verpackt die Sitzungen eines Projekts, damit du sie auf einem anderen Rechner fortsetzen kannst.\n\n"
+                "## Problem\n"
+                "Codex und Claude Code speichern Sitzungen lokal. Beim Rechner- oder Agentwechsel fehlt sonst ein einfacher Weg, den Projektkontext mitzunehmen.\n\n"
+                "## Architektur\n"
+                "`cct` liest lokale Sitzungsdateien, bündelt sie in einer `.codexbundle` und prüft die Datei vor dem Import. "
+                "Die Indexdatenbanken der Agents werden nicht direkt geändert; sie lesen importierte Dateien später neu ein.\n\n"
                 "## Nutzung\n"
                 "```\n"
                 "cct export --project .\n"
@@ -167,63 +168,67 @@ DEFAULT_CONTENT = {
         },
         {
             "title": "Dieses Portfolio",
-            "desc": "Meine Portfolio-Seite mit eigenem <b style=\"color:var(--acc)\">FastAPI</b>-Backend. Das Backend liefert Inhalte, GitHub-Daten und Statuswerte. Ein Admin-Bereich verwaltet die Texte. Die Anwendung läuft per Docker auf einer Oracle-Cloud-VM.",
+            "desc": "Meine Portfolio-Seite mit eigenem <b style=\"color:var(--acc)\">FastAPI</b>-Backend. Das Backend liefert Inhalte, GitHub-Daten und Statuswerte. Ein geschützter Admin-Bereich verwaltet die Texte. Docker betreibt die Anwendung auf einer Oracle-Cloud-VM.",
             "stack": "Python · FastAPI · SQLite · Docker · Oracle Cloud · Cloudflare",
             "repo": "ahmojo/Portfolio-Site",
             "featured": False,
             "badges": [{"label": "Full-Stack", "variant": "py"}],
             "slug": "portfolio",
             "content": (
-                "## Aufbau\n"
-                "Das Frontend lädt die Seitentexte und Projektdaten über eine FastAPI-API. "
-                "GitHub- und Uptime-Daten kommen ebenfalls über das Backend.\n\n"
-                "## Verwaltung\n"
-                "Ein geschützter Admin-Bereich bearbeitet die Inhalte. SQLite speichert diese Daten auf der VM.\n\n"
+                "## Architektur\n"
+                "Frontend und Admin-Panel verwenden die FastAPI-API auf derselben Origin. Das Backend liefert statische Dateien, "
+                "editierbare Inhalte, Projektdaten sowie GitHub- und Uptime-Status. SQLite speichert Inhalte und reduzierte Analysedaten.\n\n"
+                "## Nutzung\n"
+                "Im geschützten Admin-Bereich lassen sich Hero, Über mich, Skills und Projekte bearbeiten. "
+                "Die öffentliche Seite lädt diese Daten über `/api/content`.\n\n"
                 "## Betrieb\n"
-                "Docker startet die Anwendung auf einer Oracle-Cloud-VM. Cloudflare übernimmt DNS, HTTPS und Caching. "
-                "Das Backend erfasst nur reduzierte Analysedaten und speichert keine vollständigen IP-Adressen.\n"
+                "Docker Compose läuft auf einer Oracle-Cloud-VM. Cloudflare übernimmt DNS, HTTPS und CDN. "
+                "Das Backend speichert keine vollständigen IP-Adressen."
             ),
         },
         {
             "title": "CLI-Agent mit Tool-Nutzung",
-            "desc": "Lernprojekt aus dem Boot.dev-Kurs. Ein Python-Programm sendet Aufgaben an Gemini und stellt vier lokale Werkzeuge bereit. Der Agent kann Dateien im Beispielordner lesen, ändern und Python-Dateien ausführen.",
+            "desc": "Lernprojekt aus dem Boot.dev-Kurs. Ein Python-Programm sendet Aufgaben an Gemini und stellt vier lokale Werkzeuge bereit. Der Agent arbeitet nur im Ordner `./calculator` und kann dort Dateien lesen, ändern und Python ausführen.",
             "stack": "Python · Google GenAI SDK · Function Calling · uv",
             "repo": "ahmojo/AI_Agent",
             "featured": False,
             "badges": [{"label": "Python · Gemini API", "variant": "py"}],
             "slug": "cli-agent",
             "content": (
-                "## Zweck\n"
-                "Mit diesem Boot.dev-Projekt habe ich Function Calling mit der Gemini API ausprobiert. "
-                "Das Programm läuft im Terminal und gibt dem Modell vier Werkzeuge:\n"
+                "## Architektur\n"
+                "Das Terminalprogramm sendet Anfragen über das Google GenAI SDK an Gemini. Function Calling wählt eines von vier lokalen Werkzeugen; "
+                "`call_function.py` ordnet den Aufruf der passenden Python-Funktion zu. Die Werkzeuge arbeiten nur in `./calculator`.\n\n"
+                "## Nutzung\n"
+                "Das Programm kann:\n"
                 "- Dateien und Verzeichnisse auflisten\n"
                 "- Dateiinhalte lesen\n"
                 "- Dateien schreiben oder überschreiben\n"
                 "- Python-Dateien mit Argumenten ausführen\n\n"
-                "Die Werkzeuge greifen nur auf `./calculator` zu. `call_function.py` ordnet jeden Modellaufruf der passenden Python-Funktion zu.\n\n"
-                "## Einschränkung\n"
-                "Das Repository dient zum Lernen und ist kein fertiger Coding-Agent. Modellgesteuerte Dateiänderungen und Python-Ausführung bleiben riskant."
+                "## Stand\n"
+                "Das Repository ist ein Lernprojekt aus dem Boot.dev-Kurs, kein fertiger Coding-Agent. "
+                "Modellgesteuerte Dateiänderungen und Python-Ausführung bleiben riskant."
             ),
         },
         {
             "title": "Machine Learning",
-            "desc": "Schulprojekt zur Vorhersage mittlerer Hauswerte in Kalifornien. Drei Jupyter Notebooks behandeln Datenbeschreibung, Modelltraining und Auswertung mit scikit-learn.",
+            "desc": "Schulprojekt zur Vorhersage mittlerer Hauswerte in Kalifornien. Drei Jupyter Notebooks dokumentieren Datenprüfung, Modelltraining und Auswertung mit scikit-learn.",
             "stack": "Python · Jupyter · scikit-learn · Pandas",
             "repo": "ahmojo/LB-259_machine_learning",
             "featured": False,
             "badges": [{"label": "ML · Jupyter", "variant": "ml"}],
             "slug": "machine-learning",
             "content": (
-                "## Aufgabe\n"
+                "## Architektur\n"
+                "Der Ablauf geht vom California-Housing-Datensatz über Datenprüfung und Modelltraining zur Auswertung. "
+                "Drei Jupyter Notebooks teilen diese Schritte auf.\n\n"
+                "## Projekt\n"
                 "Ein Regressionsmodell sagt den mittleren Hauswert (`median_house_value`) eines Gebiets voraus. "
-                "Als Eingaben dienen unter anderem Einkommen, Alter, Zimmerzahl und Lage.\n\n"
+                "Als Eingaben dienen unter anderem Einkommen, Hausalter, Zimmerzahl und Lage.\n\n"
                 "## Datensatz\n"
                 "Das Projekt nutzt den Datensatz California Housing Prices aus StatLib und der kalifornischen Volkszählung von 1990. "
                 "Die Werte beschreiben Gebiete und enthalten keine Namen oder Kontaktdaten.\n\n"
-                "## Notebooks\n"
-                "- `data_description.ipynb` beschreibt und prüft die Daten.\n"
-                "- `model.ipynb` bereitet die Daten auf und trainiert das Modell.\n"
-                "- `evaluation.ipynb` wertet die Vorhersagen aus."
+                "## Stand\n"
+                "Schulprojekt. Die Notebooks dokumentieren den Lern- und Auswertungsprozess."
             ),
         },
     ],

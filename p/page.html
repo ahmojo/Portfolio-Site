@@ -78,7 +78,23 @@ h1{font-size:clamp(28px,5vw,40px);font-weight:600;letter-spacing:-.025em;line-he
   <div class="loading">loading project…</div>
 </div>
 
-<script src="../locale.js?v=20260813-project-copy"></script><script src="../locale-project.js?v=20260802-editable-en"></script><script src="../locale-project-fixes.js?v=20260802-editable-en"></script><script>function esc(s){return String(s??'').replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]))}
+<script src="../locale.js?v=20260813-project-copy"></script><script src="../locale-project.js?v=20260817-project-locale"></script><script src="../locale-project-fixes.js?v=20260802-editable-en"></script><script>function esc(s){return String(s??'').replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]))}
+
+const projectLocale = window.PortfolioLocale?.get?.() === 'en' ? 'en' : 'de';
+const projectUi = window.PortfolioLocale?.UI?.[projectLocale]?.project || {
+  back: projectLocale === 'en' ? '← back to portfolio' : '← zurück zum Portfolio',
+  loading: projectLocale === 'en' ? 'loading project …' : 'Projekt wird geladen …',
+  noWriteup: projectLocale === 'en' ? 'No write-up is available for this project yet.' : 'Für dieses Projekt gibt es noch keinen Write-up.',
+  checkRepo: projectLocale === 'en' ? 'check the repository' : 'Repository ansehen',
+  noProject: slug => projectLocale === 'en' ? 'no project with slug ' + slug : 'Kein Projekt mit dem Slug ' + slug,
+};
+const localizeProjectPayload = project => {
+  if(projectLocale !== 'en' || !project || project._localized === 'en') return project;
+  const localize = window.PortfolioLocale?.localizeProject;
+  return typeof localize === 'function' ? (localize(project, projectLocale) || project) : project;
+};
+const loading = document.querySelector('.loading');
+if(loading) loading.textContent = projectUi.loading;
 
 // minimal markdown -> HTML (headings, lists, code, bold, links, blockquote, hr)
 function mdToHtml(md){
@@ -124,9 +140,9 @@ function render(p){
   const gh = p.repo ? `<a class="gh" href="https://github.com/${esc(p.repo)}" target="_blank" rel="noopener">GitHub ↗</a>` : '';
   const body = p.content && p.content.trim()
     ? `<div class="md">${mdToHtml(p.content)}</div>`
-    : `<div class="empty-content">no writeup yet for this project.<br/>check the <a href="https://github.com/${esc(p.repo||'')}" target="_blank" rel="noopener">repo ↗</a></div>`;
+    : `<div class="empty-content">${esc(projectUi.noWriteup)}<br/><a href="https://github.com/${esc(p.repo||'')}" target="_blank" rel="noopener">${esc(projectUi.checkRepo)} ↗</a></div>`;
   root.innerHTML = `
-    <a class="back" href="/">← back to portfolio</a>
+    <a class="back" href="/">${esc(projectUi.back)}</a>
     <div class="badges">${badges}</div>
     <h1>${esc(p.title||'')}</h1>
     <p class="lede">${p.desc||''}</p>
@@ -138,18 +154,18 @@ function render(p){
 
 function notFound(slug){
   document.getElementById('root').innerHTML = `
-    <a class="back" href="/">← back to portfolio</a>
+    <a class="back" href="/">${esc(projectUi.back)}</a>
     <div class="not-found">
       <h1>404</h1>
-      <p style="color:var(--ink-mute);font-family:var(--mono);font-size:13px">no project with slug <b style="color:var(--acc)">${esc(slug)}</b></p>
+      <p style="color:var(--ink-mute);font-family:var(--mono);font-size:13px">${esc(projectUi.noProject(slug))}</p>
     </div>`;
 }
 
 const slug = location.pathname.split('/p/')[1] || '';
-fetch('/api/project/'+encodeURIComponent(slug)+'?lang='+encodeURIComponent(window.PortfolioLocale?.get?.() || 'de')).then(r=>{
+fetch('/api/project/'+encodeURIComponent(slug)+'?lang='+encodeURIComponent(projectLocale)).then(r=>{
   if(!r.ok) throw 0;
   return r.json();
-}).then(render).catch(()=>notFound(slug));
+}).then(data => render(localizeProjectPayload(data))).catch(()=>notFound(slug));
 </script>
 </body>
 </html>

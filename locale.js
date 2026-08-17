@@ -221,39 +221,39 @@
     projects: {
       'regal-erkennung': {
         title: 'Shelf recognition for SMEs',
-        desc: 'A hackathon prototype for small businesses. A webcam and <b style="color:var(--acc)">YOLOv11n-cls</b> check shelf positions. If a product is missing across repeated scans, the backend can send a reorder email with a CSV attachment.',
+        desc: 'A hackathon prototype for small businesses. A webcam checks configured shelf positions with <b style="color:var(--acc)">YOLOv11n-cls</b>. If a product is missing across repeated scans, FastAPI can send a reorder email with a CSV attachment.',
         stack: 'Python · FastAPI · YOLOv11n-cls · OpenCV · uvicorn',
         content: (
-          '## Project\n'
-          + 'My team built a shelf monitor for small businesses at Baden Hackt 2026. A webcam checks whether products are visible in configured shelf positions.\n\n'
-          + '## Flow\n'
-          + '- The browser selects the camera and defines the shelf positions.\n'
-          + '- **YOLOv11n-cls** detects visible products.\n'
-          + '- **FastAPI** processes scans and can send a reorder email with a CSV attachment.\n\n'
+          '## Problem\n'
+          + 'Empty shelf positions are easy to miss. The prototype detects missing products across repeated camera scans and can trigger a reorder.\n\n'
+          + '## Architecture\n'
+          + 'The browser selects the camera and shelf positions. **YOLOv11n-cls** classifies visible products. **FastAPI** processes scans and can send a reorder email with a CSV attachment.\n\n'
           + '## Status\n'
-          + 'This is a hackathon prototype. Model weights and demo files are kept outside the repository because of their size.'
+          + 'Hackathon prototype. Model weights and demo files stay outside the repository because of their size.'
         ),
       },
       portfolio: {
         title: 'This portfolio',
-        desc: 'My portfolio site with its own <b style="color:var(--acc)">FastAPI</b> backend. The backend serves content, GitHub data and status values. An admin area manages the text. Docker runs the app on an Oracle Cloud VM.',
+        desc: 'My portfolio site with its own <b style="color:var(--acc)">FastAPI</b> backend. The backend serves content, GitHub data and status values. A protected admin area manages the text. Docker runs the app on an Oracle Cloud VM.',
         stack: 'Python · FastAPI · SQLite · Docker · Oracle Cloud · Cloudflare',
         content: (
-          '## Structure\n'
-          + 'The frontend loads page content and project data from a FastAPI API. The backend also provides GitHub and uptime data.\n\n'
-          + '## Management\n'
-          + 'A protected admin area edits the content. SQLite stores it on the VM.\n\n'
+          '## Architecture\n'
+          + 'The frontend and admin panel use the FastAPI API on the same origin. The backend serves static files, editable content, project data, and GitHub and uptime status. SQLite stores content and reduced analytics data.\n\n'
+          + '## Usage\n'
+          + 'The protected admin area edits the hero, about section, skills, and projects. The public page loads this data through `/api/content`.\n\n'
           + '## Hosting\n'
-          + 'Docker runs the app on an Oracle Cloud VM. Cloudflare handles DNS, HTTPS and caching. The backend stores reduced analytics data and does not retain full IP addresses.'
+          + 'Docker Compose runs on an Oracle Cloud VM. Cloudflare handles DNS, HTTPS, and the CDN. The backend does not retain full IP addresses.'
         ),
       },
       'codex-claude-transfer': {
         title: 'Codex Claude Transfer',
-        desc: '<b style="color:var(--acc)">cct</b> moves local Codex and Claude Code sessions between machines. It exports them as a <code>.codexbundle</code>, verifies the file and imports it at the destination. It needs no cloud service by default.',
+        desc: '<b style="color:var(--acc)">cct</b> moves local Codex and Claude Code sessions between machines. It packages them as a <code>.codexbundle</code>, verifies the checksum and imports them at the destination. It needs no cloud service by default.',
         stack: 'Go · Cobra · Indexed State · Local-Only',
         content: (
-          '## Purpose\n'
-          + 'Codex and Claude Code store sessions on the local machine. `cct` packages a project\'s sessions so you can continue them on another computer.\n\n'
+          '## Problem\n'
+          + 'Codex and Claude Code keep sessions locally. When you change machines or agents, you still need a simple way to carry the project context with you.\n\n'
+          + '## Architecture\n'
+          + '`cct` reads local session files, packages them into a `.codexbundle`, and verifies the bundle before import. It does not write to the agents\' index databases; they rescan imported files.\n\n'
           + '## Usage\n'
           + '```\n'
           + 'cct export --project .\n'
@@ -271,33 +271,34 @@
       },
       'cli-agent': {
         title: 'CLI agent with tool use',
-        desc: 'A learning project from the Boot.dev course. A Python program sends tasks to Gemini and provides four local tools. The agent can read, change and run Python files inside the example folder.',
+        desc: 'A learning project from the Boot.dev course. A Python program sends tasks to Gemini and provides four local tools. The agent only works in `./calculator`, where it can read, change and run Python files.',
         stack: 'Python · Google GenAI SDK · Function Calling · uv',
         content: (
-          '## Purpose\n'
-          + 'I used this Boot.dev project to practise function calling with the Gemini API. The terminal program gives the model four tools:\n'
+          '## Architecture\n'
+          + 'The terminal program sends requests to Gemini through the Google GenAI SDK. Function calling selects one of four local tools; `call_function.py` dispatches each request to the matching Python function. The tools only work in `./calculator`.\n\n'
+          + '## Usage\n'
+          + 'The program can:\n'
           + '- list files and directories\n'
           + '- read file contents\n'
           + '- write or overwrite files\n'
           + '- run Python files with arguments\n\n'
-          + 'The tools only access `./calculator`. `call_function.py` maps each model request to the matching Python function.\n\n'
-          + '## Limitation\n'
-          + 'The repository is a learning exercise, not a finished coding agent. Model-driven file changes and Python execution remain risky.'
+          + '## Status\n'
+          + 'The repository is a Boot.dev learning project, not a finished coding agent. Model-driven file changes and Python execution remain risky.'
         ),
       },
       'machine-learning': {
         title: 'Machine Learning',
-        desc: 'A school project that predicts median house values in California. Three Jupyter notebooks cover data description, model training and evaluation with scikit-learn.',
+        desc: 'A school project that predicts median house values in California. Three Jupyter notebooks document data checks, model training, and evaluation with scikit-learn.',
         stack: 'Python · Jupyter · scikit-learn · Pandas',
         content: (
-          '## Task\n'
-          + 'A regression model predicts an area\'s median house value (`median_house_value`). Inputs include income, age, room count and location.\n\n'
+          '## Architecture\n'
+          + 'The workflow goes from the California Housing dataset through data checks and model training to evaluation. Three Jupyter notebooks cover those steps.\n\n'
+          + '## Project\n'
+          + 'A regression model predicts an area\'s median house value (`median_house_value`). Inputs include income, house age, room count, and location.\n\n'
           + '## Dataset\n'
           + 'The project uses the California Housing Prices dataset from StatLib and the 1990 California census. The rows describe areas and contain no names or contact details.\n\n'
-          + '## Notebooks\n'
-          + '- `data_description.ipynb` describes and checks the data.\n'
-          + '- `model.ipynb` prepares the data and trains the model.\n'
-          + '- `evaluation.ipynb` evaluates the predictions.'
+          + '## Status\n'
+          + 'School project. The notebooks document the learning and evaluation process.'
         ),
       },
     },

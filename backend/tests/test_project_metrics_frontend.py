@@ -78,6 +78,16 @@ def test_project_writeup_link_carries_the_selected_language():
     assert '`<a href="/p/${esc(p.slug)}${projectLocale}"' in html
 
 
+def test_project_page_localizes_the_api_payload_before_rendering():
+    page = (ROOT / "p" / "page.html").read_text(encoding="utf-8")
+
+    assert "const projectLocale = window.PortfolioLocale?.get?.() === 'en' ? 'en' : 'de';" in page
+    assert "const localizeProjectPayload = project =>" in page
+    assert "window.PortfolioLocale?.localizeProject" in page
+    assert ".then(data => render(localizeProjectPayload(data)))" in page
+    assert "?lang='+encodeURIComponent(projectLocale)" in page
+
+
 def test_admin_can_hide_each_metric_and_chart_opens_are_aggregated():
     admin = (ROOT / "admin" / "admin.html").read_text(encoding="utf-8")
     html = (ROOT / "index.html").read_text(encoding="utf-8")

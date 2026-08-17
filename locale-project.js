@@ -8,10 +8,17 @@
     return nativeFetch(input, init).then(response => {
       const url = typeof input === 'string' ? input : input?.url || '';
       if(!url.includes('/api/project/') || !response.ok) return response;
-      return response.clone().json().then(data => new Response(
-        JSON.stringify(localeApi.localizeProject(data, localeApi.get())),
-        {status: response.status, statusText: response.statusText, headers: response.headers},
-      )).catch(() => response);
+      return response.clone().json().then(data => {
+        const locale = localeApi.get();
+        const localized = localeApi.localizeProject(data, locale);
+        // Keep a marker so p/page.html does not apply the fallback twice and
+        // overwrite an English copy supplied by the API.
+        if(locale === 'en' && localized && typeof localized === 'object') localized._localized = 'en';
+        return new Response(
+          JSON.stringify(localized),
+          {status: response.status, statusText: response.statusText, headers: response.headers},
+        );
+      }).catch(() => response);
     });
   };
 

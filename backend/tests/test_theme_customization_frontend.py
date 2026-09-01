@@ -55,15 +55,35 @@ def test_public_site_applies_palette_layout_motion_buttons_and_decoration():
 
 
 def test_background_modes_do_not_reintroduce_large_radial_glows():
-    html = (ROOT / "index.html").read_text(encoding="utf-8")
+    public_html = (ROOT / "index.html").read_text(encoding="utf-8")
+    admin_html = (ROOT / "admin" / "admin.html").read_text(encoding="utf-8")
 
-    for mode in ("ambient", "mesh"):
-        match = re.search(
-            rf'body\[data-background="{mode}"\]\{{(?P<rule>[^}}]+)\}}',
-            html,
-        )
-        assert match, f"missing CSS rule for {mode!r} background"
-        assert "radial-gradient" not in match.group("rule")
+    for selector, html in (("body", public_html), (r"\.theme-stage", admin_html)):
+        for mode in ("ambient", "mesh"):
+            match = re.search(
+                rf'{selector}\[data-background="{mode}"\]\{{(?P<rule>[^}}]+)\}}',
+                html,
+            )
+            assert match, f"missing CSS rule for {mode!r} background"
+            assert "radial-gradient" not in match.group("rule")
+
+
+def test_preview_opens_the_unsaved_draft_without_publishing():
+    admin = (ROOT / "admin" / "admin.html").read_text(encoding="utf-8")
+    public = (ROOT / "index.html").read_text(encoding="utf-8")
+
+    assert 'id="preview-btn"' in admin
+    assert "const PREVIEW_STORAGE_PREFIX='portfolio-admin-preview:'" in admin
+    assert "localStorage.setItem(PREVIEW_STORAGE_PREFIX+token" in admin
+    assert "window.open('/?'+params.toString(),'_blank','noopener')" in admin
+    assert admin.count("prepareContentPayload()") >= 2
+
+    assert "const PREVIEW_STORAGE_PREFIX='portfolio-admin-preview:'" in public
+    assert "function readAdminPreview()" in public
+    assert "const previewContent=readAdminPreview()" in public
+    assert "previewContent?Promise.resolve(previewContent)" in public
+    assert "previewContent?Promise.resolve([])" in public
+    assert "showAdminPreviewNotice()" in public
 
 
 def test_old_terminal_exit_footer_is_removed():

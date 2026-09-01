@@ -74,6 +74,12 @@ body[data-background="grid"]{background-image:linear-gradient(rgba(var(--acc-rgb
 body[data-background="paper"]{background-image:radial-gradient(circle at 1px 1px,color-mix(in srgb,var(--ink) 9%,transparent) 1px,transparent 0);background-size:18px 18px}
 body::before{content:'';position:fixed;inset:0;z-index:0;pointer-events:none;opacity:var(--grain-opacity);
   background-image:url("data:image/svg+xml,%3Csvg viewBox='0 0 180 180' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.82' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='.75'/%3E%3C/svg%3E")}
+.admin-preview-notice{position:fixed;left:50%;bottom:18px;z-index:9999;display:flex;align-items:center;gap:10px;
+  max-width:calc(100vw - 28px);padding:9px 12px;border:1px solid var(--acc-dim);border-radius:999px;
+  color:var(--ink);background:color-mix(in srgb,var(--bg-1) 92%,transparent);box-shadow:0 14px 40px rgba(0,0,0,.35);
+  backdrop-filter:blur(14px);transform:translateX(-50%);font:10px/1.2 var(--mono)}
+.admin-preview-notice strong{color:var(--acc);font-weight:600}.admin-preview-notice span{color:var(--ink-dim)}
+.admin-preview-notice a{color:var(--ink);text-decoration:none;border-bottom:1px solid var(--acc-dim)}
 a{color:var(--ink);text-decoration:none;transition:color var(--t);border-bottom:1px solid var(--line-2)}
 a:hover{color:var(--acc);border-color:var(--acc)}
 a.plain{border:none}
@@ -2339,7 +2345,7 @@ function normalizeGithubRepo(value){
   const pill = document.getElementById('now-pill');
   // give the content fetch a moment; if it hasn't shown the pill, try /api/now
   setTimeout(() => {
-    if(!pill.hidden) return;
+    if(window.__ADMIN_PREVIEW || !pill.hidden) return;
     api('/api/now').then(d => {
       if(!d || (!d.status && !d.detail)) return;
       document.getElementById('now-status').textContent = d.status || 'building';
@@ -2745,6 +2751,32 @@ function normalizeGithubRepo(value){
    static defaults. On failure it silently does nothing, so the page
    keeps showing the hardcoded fallback content. */
 (function(){
+  const PREVIEW_STORAGE_PREFIX='portfolio-admin-preview:';
+  const PREVIEW_TTL_MS=30*60*1000;
+  function readAdminPreview(){
+    let token='';
+    try{token=new URLSearchParams(location.search).get('preview')||''}catch(_){return null}
+    if(!/^[a-zA-Z0-9-]{12,80}$/.test(token)) return null;
+    const key=PREVIEW_STORAGE_PREFIX+token;
+    try{
+      const payload=JSON.parse(localStorage.getItem(key)||'null');
+      if(!payload?.createdAt||!payload?.content||Date.now()-payload.createdAt>PREVIEW_TTL_MS){
+        localStorage.removeItem(key);
+        return null;
+      }
+      return payload.content;
+    }catch(_){return null}
+  }
+  function showAdminPreviewNotice(){
+    document.body.dataset.adminPreview='true';
+    document.title=`Preview · ${document.title}`;
+    const english=window.__portfolioLocale==='en';
+    const notice=document.createElement('aside');
+    notice.className='admin-preview-notice';
+    notice.setAttribute('role','status');
+    notice.innerHTML=`<strong>${english?'Unsaved preview':'Ungespeicherte Vorschau'}</strong><span>${english?'Only visible in this browser':'Nur in diesem Browser sichtbar'}</span><a href="/admin">${english?'Back to admin':'Zurück zum Admin'}</a>`;
+    document.body.appendChild(notice);
+  }
   function hexToRgb(hex){
     const m = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex||'');
     return m ? `${parseInt(m[1],16)},${parseInt(m[2],16)},${parseInt(m[3],16)}` : '109,230,162';
@@ -3005,10 +3037,14 @@ function normalizeGithubRepo(value){
     applyTheme(c.theme);
   };
 
+  const previewContent=readAdminPreview();
+  window.__ADMIN_PREVIEW=Boolean(previewContent);
+  if(previewContent) showAdminPreviewNotice();
+
   Promise.all([
-    fetch('/api/content', {headers:{'Cache-Control':'no-cache'}})
+    previewContent?Promise.resolve(previewContent):fetch('/api/content', {headers:{'Cache-Control':'no-cache'}})
       .then(r => r.ok ? r.json() : null),
-    fetch('/api/open-source')
+    previewContent?Promise.resolve([]):fetch('/api/open-source')
       .then(r => r.ok ? r.json() : [])
       .catch(()=>[])
   ])    .then(([c, liveOpenSource]) => {

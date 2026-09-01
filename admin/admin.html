@@ -171,8 +171,8 @@ input[type=range]{width:100%;accent-color:var(--acc);cursor:pointer}
   --pv-ink:#e6edf8;--pv-angle:120deg;--pv-radius:8px;position:relative;isolation:isolate;overflow:hidden;
   min-height:250px;padding:20px 22px;border:1px solid color-mix(in srgb,var(--pv-ink) 14%,transparent);
   border-radius:10px;background:var(--pv-bg);color:var(--pv-ink)}
-.theme-stage[data-background="ambient"]{background:radial-gradient(circle at 82% 12%,color-mix(in srgb,var(--pv-acc) 18%,transparent),transparent 36%),var(--pv-bg)}
-.theme-stage[data-background="mesh"]{background:radial-gradient(circle at 12% 88%,color-mix(in srgb,var(--pv-alt) 20%,transparent),transparent 38%),radial-gradient(circle at 88% 8%,color-mix(in srgb,var(--pv-acc) 20%,transparent),transparent 34%),var(--pv-bg)}
+.theme-stage[data-background="ambient"]{background:linear-gradient(120deg,transparent 0 72%,color-mix(in srgb,var(--pv-acc) 2.5%,transparent) 100%),var(--pv-bg)}
+.theme-stage[data-background="mesh"]{background:linear-gradient(135deg,transparent 0 46%,color-mix(in srgb,var(--pv-alt) 4%,transparent) 50%,transparent 54%),linear-gradient(45deg,transparent 0 46%,color-mix(in srgb,var(--pv-acc) 3%,transparent) 50%,transparent 54%),var(--pv-bg)}
 .theme-stage[data-background="grid"]{background-image:linear-gradient(color-mix(in srgb,var(--pv-ink) 7%,transparent) 1px,transparent 1px),linear-gradient(90deg,color-mix(in srgb,var(--pv-ink) 7%,transparent) 1px,transparent 1px);background-size:24px 24px;background-color:var(--pv-bg)}
 .theme-stage[data-background="paper"]{background:radial-gradient(circle at 1px 1px,color-mix(in srgb,var(--pv-ink) 10%,transparent) 1px,transparent 0),var(--pv-bg);background-size:15px 15px}
 .theme-preview-nav{position:relative;z-index:2;display:flex;justify-content:space-between;align-items:center;
@@ -323,7 +323,7 @@ input[type=range]{width:100%;accent-color:var(--acc);cursor:pointer}
         <button type="button" class="active" data-editor-locale="de" aria-pressed="true">DE</button>
         <button type="button" data-editor-locale="en" aria-pressed="false">EN</button>
       </div>
-      <a class="btn" href="/" target="_blank">preview ↗</a>
+      <button type="button" class="btn" id="preview-btn">preview draft ↗</button>
       <a class="btn" href="/api/backup" id="backup-btn" title="download the database (save before deploy/sleep)">backup .db</a>
       <button class="btn btn-primary" id="save-btn">save changes</button>
       <button class="btn btn-danger" id="logout-btn">logout</button>
@@ -580,6 +580,8 @@ const THEME_DEFAULTS = {
   button_style:'gradient',button_animation:'shine',gradient_angle:120,radius:8,
   content_width:820,motion:'full',grain:10,
 };
+const PREVIEW_STORAGE_PREFIX='portfolio-admin-preview:';
+const PREVIEW_TTL_MS=30*60*1000;
 const THEME_PRESETS = {
   signature:{...THEME_DEFAULTS},
   midnight:{...THEME_DEFAULTS,bg:'#0b1020',surface:'#151d33',accent:'#75e6c4',accent_alt:'#69a7ff',ink:'#edf4ff',background_style:'mesh',decoration:'rails'},
@@ -598,6 +600,45 @@ function normalizeGithubRepo(value){
     .replace(/^\/+|\/+$/g,'').split('/').slice(0,2).join('/');
 }
 function clone(value){return JSON.parse(JSON.stringify(value));}
+function prepareContentPayload(){
+  const out=clone(siteContent);
+  out.projects.forEach(p=>{p.badges=(p.badges||[]).filter(b=>b.label&&b.label.trim())});
+  if(out.translations?.en?.projects){
+    out.translations.en.projects.forEach(p=>{p.badges=(p.badges||[]).filter(b=>b.label&&b.label.trim())});
+  }
+  return out;
+}
+function cleanupPreviewDrafts(){
+  for(let i=localStorage.length-1;i>=0;i--){
+    const key=localStorage.key(i);
+    if(!key?.startsWith(PREVIEW_STORAGE_PREFIX)) continue;
+    try{
+      const payload=JSON.parse(localStorage.getItem(key)||'null');
+      if(!payload?.createdAt||Date.now()-payload.createdAt>PREVIEW_TTL_MS) localStorage.removeItem(key);
+    }catch(_){localStorage.removeItem(key)}
+  }
+}
+function createPreviewToken(){
+  return window.crypto?.randomUUID
+    ? window.crypto.randomUUID()
+    : `${Date.now()}-${Math.random().toString(36).slice(2)}`;
+}
+function openDraftPreview(){
+  if(!siteContent) return;
+  const token=createPreviewToken();
+  try{
+    cleanupPreviewDrafts();
+    localStorage.setItem(PREVIEW_STORAGE_PREFIX+token,JSON.stringify({
+      createdAt:Date.now(),
+      content:prepareContentPayload(),
+    }));
+  }catch(e){
+    toast('preview failed: '+e.message,'err');
+    return;
+  }
+  const params=new URLSearchParams({preview:token,lang:editorLocale});
+  window.open('/?'+params.toString(),'_blank','noopener');
+}
 function createEnglishDraft(){
   const localized = window.PortfolioLocale?.localizeContent
     ? window.PortfolioLocale.localizeContent(clone(siteContent), 'en')
@@ -1178,15 +1219,13 @@ $('#an-days').addEventListener('change',loadAnalytics);
 
 function renderAll(){renderHero();renderAbout();renderSkills();renderProjects();renderCctMetricSettings();renderOpenSource();renderLearning();if(editorLocale === 'de') renderTheme()}
 
+$('#preview-btn').addEventListener('click',openDraftPreview);
+
 $('#save-btn').addEventListener('click',async()=>{
   const btn=$('#save-btn');btn.disabled=true;btn.textContent='saving…';
   try{
-    // clean: drop empty badges in the default and English copies.
-    const out=clone(siteContent);
-    out.projects.forEach(p=>{p.badges=(p.badges||[]).filter(b=>b.label&&b.label.trim())});
-    if(out.translations?.en?.projects){
-      out.translations.en.projects.forEach(p=>{p.badges=(p.badges||[]).filter(b=>b.label&&b.label.trim())});
-    }
+    // Preview and save use the exact same normalized content payload.
+    const out=prepareContentPayload();
     const saved=await api('/api/content',{method:'PUT',body:JSON.stringify(out)});
     siteContent=saved;
     content=editorLocale === 'en' ? siteContent.translations?.en : siteContent;

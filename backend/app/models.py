@@ -208,7 +208,7 @@ class ThemeContent(BaseModel):
     accent_alt: str = Field("#7db2ee", pattern=r"^#[0-9a-fA-F]{6}$")
     ink: str = Field("#e6edf8", pattern=r"^#[0-9a-fA-F]{6}$")
     background_style: Literal["solid", "ambient", "mesh", "grid", "paper"] = "ambient"
-    decoration: Literal["rails", "grid", "none"] = "none"
+    decoration: Literal["rails", "grid", "brackets", "none"] = "none"
     decoration_intensity: int = Field(58, ge=0, le=100)
     button_style: Literal["gradient", "glass", "solid", "outline", "minimal"] = "gradient"
     button_animation: Literal["shine", "lift", "glow", "underline", "none"] = "shine"
@@ -221,8 +221,8 @@ class ThemeContent(BaseModel):
     @field_validator("decoration", mode="before")
     @classmethod
     def retire_unsafe_decorations(cls, value):
-        """Make persisted GPU-heavy and viewport-fixed decorations safe."""
-        retired = {"particles", "brackets", "aurora"}
+        """Make persisted GPU-heavy decorations safe."""
+        retired = {"particles", "aurora"}
         return "none" if isinstance(value, str) and value in retired else value
 
 

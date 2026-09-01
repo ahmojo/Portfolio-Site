@@ -127,13 +127,21 @@ class SiteContentOpenSourceTests(unittest.TestCase):
         self.assertEqual(content.theme.content_width, 820)
 
     def test_unsafe_legacy_decorations_are_retired_on_load(self):
-        for decoration in ("particles", "brackets", "aurora"):
+        for decoration in ("particles", "aurora"):
             content = SiteContent.model_validate(
                 {"theme": {"decoration": decoration, "particles": 300}}
             )
 
             self.assertEqual(content.theme.decoration, "none")
             self.assertNotIn("particles", content.theme.model_dump())
+
+    def test_viewfinder_brackets_are_preserved(self):
+        content = SiteContent.model_validate(
+            {"theme": {"decoration": "brackets", "decoration_intensity": 64}}
+        )
+
+        self.assertEqual(content.theme.decoration, "brackets")
+        self.assertEqual(content.theme.decoration_intensity, 64)
 
     def test_theme_options_are_validated_before_they_are_saved(self):
         with self.assertRaises(ValidationError):

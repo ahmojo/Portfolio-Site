@@ -171,7 +171,7 @@ input[type=range]{width:100%;accent-color:var(--acc);cursor:pointer}
   --pv-ink:#e6edf8;--pv-angle:120deg;--pv-radius:8px;position:relative;isolation:isolate;overflow:hidden;
   min-height:250px;padding:20px 22px;border:1px solid color-mix(in srgb,var(--pv-ink) 14%,transparent);
   border-radius:10px;background:var(--pv-bg);color:var(--pv-ink)}
-.theme-stage[data-background="ambient"]{background:linear-gradient(120deg,transparent 0 72%,color-mix(in srgb,var(--pv-acc) 2.5%,transparent) 100%),var(--pv-bg)}
+.theme-stage[data-background="ambient"]{background:linear-gradient(180deg,color-mix(in srgb,var(--pv-acc) 1.8%,transparent) 0%,transparent 46%),var(--pv-bg)}
 .theme-stage[data-background="mesh"]{background:linear-gradient(135deg,transparent 0 46%,color-mix(in srgb,var(--pv-alt) 4%,transparent) 50%,transparent 54%),linear-gradient(45deg,transparent 0 46%,color-mix(in srgb,var(--pv-acc) 3%,transparent) 50%,transparent 54%),var(--pv-bg)}
 .theme-stage[data-background="grid"]{background-image:linear-gradient(color-mix(in srgb,var(--pv-ink) 7%,transparent) 1px,transparent 1px),linear-gradient(90deg,color-mix(in srgb,var(--pv-ink) 7%,transparent) 1px,transparent 1px);background-size:24px 24px;background-color:var(--pv-bg)}
 .theme-stage[data-background="paper"]{background:radial-gradient(circle at 1px 1px,color-mix(in srgb,var(--pv-ink) 10%,transparent) 1px,transparent 0),var(--pv-bg);background-size:15px 15px}
@@ -204,6 +204,15 @@ input[type=range]{width:100%;accent-color:var(--acc);cursor:pointer}
 .theme-stage[data-decoration="none"] .theme-preview-decoration{display:none}
 .theme-stage[data-decoration="rails"] .theme-preview-decoration{inset:0 12px;background:repeating-linear-gradient(0deg,var(--pv-alt) 0 1px,transparent 1px 14px);mask-image:linear-gradient(90deg,#000 0 2px,transparent 2px calc(100% - 2px),#000 calc(100% - 2px))}
 .theme-stage[data-decoration="grid"] .theme-preview-decoration{background-image:linear-gradient(color-mix(in srgb,var(--pv-alt) 35%,transparent) 1px,transparent 1px),linear-gradient(90deg,color-mix(in srgb,var(--pv-alt) 35%,transparent) 1px,transparent 1px);background-size:18px 18px;mask-image:linear-gradient(90deg,#000,transparent 30%,transparent 70%,#000)}
+.theme-stage[data-decoration="brackets"] .theme-preview-decoration{inset:14px;background:
+  linear-gradient(var(--pv-alt),var(--pv-alt)) left top/18% 1px no-repeat,
+  linear-gradient(var(--pv-alt),var(--pv-alt)) left top/1px 26% no-repeat,
+  linear-gradient(var(--pv-alt),var(--pv-alt)) right top/18% 1px no-repeat,
+  linear-gradient(var(--pv-alt),var(--pv-alt)) right top/1px 26% no-repeat,
+  linear-gradient(var(--pv-alt),var(--pv-alt)) left bottom/18% 1px no-repeat,
+  linear-gradient(var(--pv-alt),var(--pv-alt)) left bottom/1px 26% no-repeat,
+  linear-gradient(var(--pv-alt),var(--pv-alt)) right bottom/18% 1px no-repeat,
+  linear-gradient(var(--pv-alt),var(--pv-alt)) right bottom/1px 26% no-repeat}
 .theme-meta{display:flex;gap:14px;flex-wrap:wrap;padding:8px 4px 0;font:9px/1.3 var(--mono);color:var(--ink-mute)}
 .theme-meta b{color:var(--ink)}
 
@@ -453,7 +462,7 @@ input[type=range]{width:100%;accent-color:var(--acc);cursor:pointer}
             <div class="theme-group-head"><div><h3>Atmosphere &amp; side decoration</h3><p>Choose a structured edge treatment or keep the page completely calm.</p></div></div>
             <div class="theme-control-grid">
               <div class="field"><label for="theme-background-style">Background treatment</label><select id="theme-background-style"><option value="solid">Solid</option><option value="ambient">Ambient spotlight</option><option value="mesh">Asymmetric mesh</option><option value="grid">Technical grid</option><option value="paper">Dotted paper</option></select></div>
-              <div class="field"><label for="theme-decoration">Side decoration</label><select id="theme-decoration"><option value="none">None</option><option value="rails">Technical rails</option><option value="grid">Side grid</option></select></div>
+              <div class="field"><label for="theme-decoration">Side decoration</label><select id="theme-decoration"><option value="none">None</option><option value="rails">Technical rails</option><option value="grid">Side grid</option><option value="brackets">Viewfinder corners</option></select></div>
               <div class="theme-range"><label for="theme-decoration-intensity">Decoration intensity <output id="decoration-intensity-val">58%</output></label><input type="range" id="theme-decoration-intensity" min="0" max="100" step="1" /></div>
               <div class="theme-range"><label for="theme-grain">Texture <output id="grain-val">10%</output></label><input type="range" id="theme-grain" min="0" max="40" step="1" /></div>
               <div class="field"><label for="theme-motion">Page motion</label><select id="theme-motion"><option value="full">Expressive</option><option value="subtle">Subtle</option><option value="none">None</option></select></div>
@@ -575,7 +584,7 @@ const THEME_DEFAULTS = {
   button_style:'gradient',button_animation:'shine',gradient_angle:120,radius:8,
   content_width:820,motion:'full',grain:10,
 };
-const SAFE_DECORATIONS=new Set(['none','rails','grid']);
+const SAFE_DECORATIONS=new Set(['none','rails','grid','brackets']);
 function normalizeTheme(theme={}){
   const normalized={...THEME_DEFAULTS,...theme};
   if(!SAFE_DECORATIONS.has(normalized.decoration)) normalized.decoration='none';
@@ -586,7 +595,7 @@ const PREVIEW_TTL_MS=30*60*1000;
 const THEME_PRESETS = {
   signature:{...THEME_DEFAULTS},
   midnight:{...THEME_DEFAULTS,bg:'#0b1020',surface:'#151d33',accent:'#75e6c4',accent_alt:'#69a7ff',ink:'#edf4ff',background_style:'mesh',decoration:'rails'},
-  graphite:{...THEME_DEFAULTS,bg:'#171715',surface:'#292824',accent:'#d6b36a',accent_alt:'#97a69b',ink:'#f1eee5',background_style:'ambient',decoration:'none',button_style:'outline'},
+  graphite:{...THEME_DEFAULTS,bg:'#171715',surface:'#292824',accent:'#d6b36a',accent_alt:'#97a69b',ink:'#f1eee5',background_style:'ambient',decoration:'brackets',button_style:'outline'},
   paper:{...THEME_DEFAULTS,bg:'#f1eee7',surface:'#fffaf0',accent:'#b43b2f',accent_alt:'#315c78',ink:'#20201d',background_style:'paper',decoration:'rails',button_style:'solid',motion:'subtle',grain:6},
 };
 

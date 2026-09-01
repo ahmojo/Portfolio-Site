@@ -28,7 +28,7 @@ def test_admin_theme_studio_exposes_complete_customization_controls():
     ):
         assert f'id="{control_id}"' in admin
 
-    for option in ("rails", "grid", "gradient", "glass", "underline"):
+    for option in ("rails", "grid", "brackets", "gradient", "glass", "underline"):
         assert f'value="{option}"' in admin
 
     assert "siteContent.theme=normalizeTheme(siteContent.theme)" in admin
@@ -43,13 +43,14 @@ def test_public_site_applies_palette_layout_motion_buttons_and_decoration():
     assert "root.setProperty('--line',mixHex(theme.bg,theme.ink,.16))" in html
     assert "root.setProperty('--maxw',theme.content_width+'px')" in html
     assert "document.body.dataset.background=theme.background_style" in html
-    assert "const safeDecoration=['rails','grid'].includes(theme.decoration)?theme.decoration:'none'" in html
+    assert "const safeDecoration=['rails','grid','brackets'].includes(theme.decoration)?theme.decoration:'none'" in html
     assert "document.body.dataset.decoration=safeDecoration" in html
     assert "document.body.dataset.buttonStyle=theme.button_style" in html
     assert "document.body.dataset.buttonAnimation" in html
     assert "root.setProperty('--decor-intensity',theme.decoration_intensity/100)" in html
     assert 'data-decoration="none"' in html
     assert 'body[data-decoration="rails"]' in html
+    assert 'body[data-decoration="brackets"]' in html
     assert 'body[data-button-style="gradient"]' in html
     assert 'body[data-button-animation="underline"]' in html
 
@@ -63,7 +64,6 @@ def test_unsafe_legacy_decorations_cannot_render_or_be_selected():
         "hero particle network",
         "__setParticles",
         'data-decoration="particles"',
-        'data-decoration="brackets"',
         'data-decoration="aurora"',
         "filter:blur(90px)",
     ):
@@ -73,9 +73,7 @@ def test_unsafe_legacy_decorations_cannot_render_or_be_selected():
         'value="particles"',
         'id="theme-particles"',
         'data-decoration="particles"',
-        'value="brackets"',
         'value="aurora"',
-        'data-decoration="brackets"',
         'data-decoration="aurora"',
         "themeAurora",
     ):
@@ -83,6 +81,10 @@ def test_unsafe_legacy_decorations_cannot_render_or_be_selected():
 
     assert "decoration:'none'" in public
     assert "decoration:'none'" in admin
+    assert 'data-decoration="brackets"' in public
+    assert 'value="brackets"' in admin
+    assert 'data-decoration="brackets"' in admin
+    assert public.count('<span></span>') >= 4
 
 
 def test_background_modes_do_not_reintroduce_large_radial_glows():
@@ -110,6 +112,25 @@ def test_public_background_effects_are_bounded_to_the_hero():
     assert "body::before" not in html
     assert "#hero::after{content:'';position:absolute" in html
     assert "position:fixed;inset:0;z-index:0;pointer-events:none;opacity:var(--grain-opacity)" not in html
+
+
+def test_ambient_background_fades_out_before_the_hero_boundary():
+    public_html = (ROOT / "index.html").read_text(encoding="utf-8")
+    admin_html = (ROOT / "admin" / "admin.html").read_text(encoding="utf-8")
+
+    public_rule = re.search(
+        re.escape('body[data-background="ambient"] #hero') + r'\{(?P<rule>[^}]+)\}',
+        public_html,
+    )
+    admin_rule = re.search(
+        re.escape('.theme-stage[data-background="ambient"]') + r'\{(?P<rule>[^}]+)\}',
+        admin_html,
+    )
+    assert public_rule and admin_rule
+    for rule in (public_rule.group("rule"), admin_rule.group("rule")):
+        assert "linear-gradient(180deg" in rule
+        assert "46%" in rule
+        assert "120deg" not in rule
 
 
 def test_public_accent_feedback_has_no_blurred_colored_shadows():

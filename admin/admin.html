@@ -202,7 +202,6 @@ input[type=range]{width:100%;accent-color:var(--acc);cursor:pointer}
   background:color-mix(in srgb,var(--pv-surface) 82%,transparent)}
 .theme-preview-decoration{position:absolute;inset:0;z-index:0;pointer-events:none;opacity:var(--pv-intensity,.58)}
 .theme-stage[data-decoration="none"] .theme-preview-decoration{display:none}
-.theme-stage[data-decoration="particles"] .theme-preview-decoration{background:radial-gradient(circle,var(--pv-acc) 0 1px,transparent 1.5px);background-size:27px 31px;mask-image:linear-gradient(90deg,#000,transparent 28%,transparent 72%,#000)}
 .theme-stage[data-decoration="rails"] .theme-preview-decoration{inset:0 12px;background:repeating-linear-gradient(0deg,var(--pv-alt) 0 1px,transparent 1px 14px);mask-image:linear-gradient(90deg,#000 0 2px,transparent 2px calc(100% - 2px),#000 calc(100% - 2px))}
 .theme-stage[data-decoration="grid"] .theme-preview-decoration{background-image:linear-gradient(color-mix(in srgb,var(--pv-alt) 35%,transparent) 1px,transparent 1px),linear-gradient(90deg,color-mix(in srgb,var(--pv-alt) 35%,transparent) 1px,transparent 1px);background-size:18px 18px;mask-image:linear-gradient(90deg,#000,transparent 30%,transparent 70%,#000)}
 .theme-stage[data-decoration="brackets"] .theme-preview-decoration{inset:14px;border:1px solid var(--pv-alt);clip-path:polygon(0 0,18% 0,18% 1px,1px 1px,1px 26%,0 26%,0 100%,1px 100%,1px 74%,18% 74%,18% 75%,0 75%,0 26%,1px 26%,1px 1px,99% 1px,99% 26%,100% 26%,100% 0)}
@@ -454,12 +453,11 @@ input[type=range]{width:100%;accent-color:var(--acc);cursor:pointer}
           </section>
 
           <section class="theme-group">
-            <div class="theme-group-head"><div><h3>Atmosphere &amp; side decoration</h3><p>Use structured rails, brackets or grids instead of the floating particle network.</p></div></div>
+            <div class="theme-group-head"><div><h3>Atmosphere &amp; side decoration</h3><p>Choose a structured edge treatment or keep the page completely calm.</p></div></div>
             <div class="theme-control-grid">
               <div class="field"><label for="theme-background-style">Background treatment</label><select id="theme-background-style"><option value="solid">Solid</option><option value="ambient">Ambient spotlight</option><option value="mesh">Asymmetric mesh</option><option value="grid">Technical grid</option><option value="paper">Dotted paper</option></select></div>
-              <div class="field"><label for="theme-decoration">Side decoration</label><select id="theme-decoration"><option value="particles">Particle network</option><option value="rails">Technical rails</option><option value="grid">Side grid</option><option value="brackets">Viewport brackets</option><option value="aurora">Soft aurora</option><option value="none">None</option></select></div>
+              <div class="field"><label for="theme-decoration">Side decoration</label><select id="theme-decoration"><option value="none">None</option><option value="rails">Technical rails</option><option value="grid">Side grid</option><option value="brackets">Viewport brackets</option><option value="aurora">Soft aurora</option></select></div>
               <div class="theme-range"><label for="theme-decoration-intensity">Decoration intensity <output id="decoration-intensity-val">58%</output></label><input type="range" id="theme-decoration-intensity" min="0" max="100" step="1" /></div>
-              <div class="theme-range" id="particle-field"><label for="theme-particles">Particle count <output id="particle-val">72</output></label><input type="range" id="theme-particles" min="0" max="300" step="4" /></div>
               <div class="theme-range"><label for="theme-grain">Texture <output id="grain-val">10%</output></label><input type="range" id="theme-grain" min="0" max="40" step="1" /></div>
               <div class="field"><label for="theme-motion">Page motion</label><select id="theme-motion"><option value="full">Expressive</option><option value="subtle">Subtle</option><option value="none">None</option></select></div>
             </div>
@@ -481,8 +479,8 @@ input[type=range]{width:100%;accent-color:var(--acc);cursor:pointer}
           </section>
 
           <div class="theme-preview">
-            <div class="theme-preview-head"><span>Live preview · unsaved</span><span id="theme-preview-label">ambient / particles</span></div>
-            <div class="theme-stage" id="theme-stage" data-background="ambient" data-decoration="particles" data-button="gradient" data-animation="shine">
+            <div class="theme-preview-head"><span>Live preview · unsaved</span><span id="theme-preview-label">ambient / none</span></div>
+            <div class="theme-stage" id="theme-stage" data-background="ambient" data-decoration="none" data-button="gradient" data-animation="shine">
               <div class="theme-preview-decoration" aria-hidden="true"></div>
               <div class="theme-preview-nav"><b>&lt;/&gt; Ahmet</b><span>work&nbsp;&nbsp;about&nbsp;&nbsp;contact</span></div>
               <div class="theme-preview-copy"><small>Backend developer · Aargau</small><h3>Systems that stay understandable.</h3><p>The preview uses the same palette, button treatment and side decoration as the public site.</p><div class="theme-preview-actions"><span class="theme-preview-button">GitHub ↗</span><span class="theme-preview-button">View project ↓</span></div></div>
@@ -576,7 +574,7 @@ const DEFAULT_OPEN_SOURCE = [
 ];
 const THEME_DEFAULTS = {
   bg:'#161a28',surface:'#232840',accent:'#6de6a2',accent_alt:'#7db2ee',ink:'#e6edf8',
-  background_style:'ambient',decoration:'particles',decoration_intensity:58,particles:72,
+  background_style:'ambient',decoration:'none',decoration_intensity:58,
   button_style:'gradient',button_animation:'shine',gradient_angle:120,radius:8,
   content_width:820,motion:'full',grain:10,
 };
@@ -1059,7 +1057,7 @@ function renderTheme(){
     'theme-bg':t.bg,'theme-surface':t.surface,'theme-accent':t.accent,
     'theme-accent-alt':t.accent_alt,'theme-ink':t.ink,
     'theme-background-style':t.background_style,'theme-decoration':t.decoration,
-    'theme-decoration-intensity':t.decoration_intensity,'theme-particles':t.particles,
+    'theme-decoration-intensity':t.decoration_intensity,
     'theme-button-style':t.button_style,'theme-button-animation':t.button_animation,
     'theme-gradient-angle':t.gradient_angle,'theme-radius':t.radius,
     'theme-content-width':t.content_width,'theme-motion':t.motion,'theme-grain':t.grain,
@@ -1089,17 +1087,15 @@ function updateThemePreview(){
     $('#theme-'+key+'-value').textContent=$('#theme-'+key).value;
   });
   $('#decoration-intensity-val').textContent=t.decoration_intensity+'%';
-  $('#particle-val').textContent=t.particles;
   $('#grain-val').textContent=t.grain+'%';
   $('#gradient-angle-val').textContent=t.gradient_angle+'°';
   $('#radius-val').textContent=t.radius+'px';
   $('#content-width-val').textContent=t.content_width+'px';
-  $('#particle-field').hidden=t.decoration!=='particles';
 }
 const THEME_FIELDS={
   'theme-bg':'bg','theme-surface':'surface','theme-accent':'accent','theme-accent-alt':'accent_alt','theme-ink':'ink',
   'theme-background-style':'background_style','theme-decoration':'decoration','theme-decoration-intensity':'decoration_intensity',
-  'theme-particles':'particles','theme-button-style':'button_style','theme-button-animation':'button_animation',
+  'theme-button-style':'button_style','theme-button-animation':'button_animation',
   'theme-gradient-angle':'gradient_angle','theme-radius':'radius','theme-content-width':'content_width',
   'theme-motion':'motion','theme-grain':'grain',
 };

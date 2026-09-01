@@ -29,6 +29,31 @@ def _assert_only_crisp_inset_shadows(rule: str) -> None:
     assert all(layer.startswith("inset ") for layer in layers), layers
 
 
+def _css_rule(html: str, selector: str) -> str:
+    match = re.search(re.escape(selector) + r"\{(?P<rule>[^{}]+)\}", html)
+    assert match, f"missing CSS rule for {selector!r}"
+    return match.group("rule")
+
+
+def _assert_neutral_flat_background(
+    rule: str,
+    background_token: str,
+    accent_pattern: str,
+) -> None:
+    assert background_token in rule
+    assert not re.search(
+        r"(?:repeating-)?(?:linear|radial|conic)-gradient\(|url\(",
+        rule,
+        flags=re.IGNORECASE,
+    )
+    assert not re.search(accent_pattern, rule)
+    assert not re.search(
+        r"(?:^|;)\s*filter\s*:\s*blur\(",
+        rule,
+        flags=re.IGNORECASE,
+    )
+
+
 def test_admin_theme_studio_exposes_complete_customization_controls():
     admin = (ROOT / "admin" / "admin.html").read_text(encoding="utf-8")
 
@@ -139,28 +164,46 @@ def test_patterned_background_effects_are_bounded_to_the_hero():
     assert "position:fixed;inset:0;z-index:0;pointer-events:none;opacity:var(--grain-opacity)" not in html
 
 
-def test_ambient_background_is_a_uniform_opaque_tint_without_banding():
+def test_global_background_stays_neutral_and_legacy_aura_layers_stay_retired():
     public_html = (ROOT / "index.html").read_text(encoding="utf-8")
     admin_html = (ROOT / "admin" / "admin.html").read_text(encoding="utf-8")
 
-    public_rule = re.search(
-        re.escape('body[data-background="ambient"]') + r'\{(?P<rule>[^}]+)\}',
-        public_html,
+    _assert_neutral_flat_background(
+        _css_rule(public_html, "body"),
+        "var(--bg)",
+        r"var\(--acc(?:-rgb|-alt)?\)",
     )
-    admin_rule = re.search(
-        re.escape('.theme-stage[data-background="ambient"]') + r'\{(?P<rule>[^}]+)\}',
-        admin_html,
+    _assert_neutral_flat_background(
+        _css_rule(public_html, 'body[data-background="ambient"]'),
+        "var(--bg)",
+        r"var\(--acc(?:-rgb|-alt)?\)",
     )
-    assert public_rule and admin_rule
-    for rule, background_var, accent_var in (
-        (public_rule.group("rule"), "var(--bg)", "var(--acc)"),
-        (admin_rule.group("rule"), "var(--pv-bg)", "var(--pv-acc)"),
+    _assert_neutral_flat_background(
+        _css_rule(admin_html, '.theme-stage[data-background="ambient"]'),
+        "var(--pv-bg)",
+        r"var\(--pv-(?:acc|alt)\)",
+    )
+
+    for selector in ("body::before", "body::after"):
+        match = re.search(re.escape(selector) + r"\{(?P<rule>[^{}]+)\}", public_html)
+        if not match:
+            continue
+        rule = match.group("rule")
+        is_full_page = "position:fixed" in rule and "inset:" in rule
+        is_spatial_effect = bool(
+            re.search(r"(?:gradient|url)\(|filter\s*:\s*blur\(", rule, re.IGNORECASE)
+        )
+        assert not (is_full_page and is_spatial_effect), selector
+
+    for retired_fragment in (
+        ".spot{",
+        'id="spot"',
+        "@keyframes aura",
+        "--mx",
+        "--my",
+        "cursor spotlight",
     ):
-        assert "gradient" not in rule
-        assert "transparent" not in rule
-        assert "color-mix" in rule
-        assert f"{background_var} 98%" in rule
-        assert f"{accent_var} 2%" in rule
+        assert retired_fragment not in public_html
 
 
 def test_public_accent_feedback_has_no_blurred_colored_shadows():

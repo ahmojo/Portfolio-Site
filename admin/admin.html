@@ -27,19 +27,19 @@ a{color:var(--acc);text-decoration:none}
 .login-card{width:100%;max-width:360px;background:var(--bg-1);border:1px solid var(--line);
   border-radius:10px;padding:32px}
 .login-card h1{font-size:18px;font-weight:500;margin-bottom:6px;display:flex;align-items:center;gap:10px}
-.login-card h1 .dot{width:8px;height:8px;border-radius:50%;background:var(--acc);box-shadow:0 0 10px var(--acc)}
+.login-card h1 .dot{width:7px;height:7px;border-radius:2px;background:var(--acc)}
 .login-card .sub{font-family:var(--mono);font-size:11px;color:var(--ink-mute);margin-bottom:24px}
 .login-card label{display:block;font-family:var(--mono);font-size:11px;color:var(--ink-mute);
   text-transform:uppercase;letter-spacing:1px;margin-bottom:8px}
 .login-card input{width:100%;font-family:var(--mono);font-size:13px;color:var(--ink);
   background:var(--bg);border:1px solid var(--line-2);border-radius:6px;padding:11px 13px;outline:none;
-  transition:border-color .2s,box-shadow .2s}
-.login-card input:focus{border-color:var(--acc);box-shadow:0 0 0 3px rgba(109,230,162,.12)}
+  transition:border-color .2s,outline-color .2s}
+.login-card input:focus{border-color:var(--acc);outline:2px solid rgba(109,230,162,.28);outline-offset:2px}
 .login-card button{width:100%;margin-top:18px;font-family:var(--mono);font-weight:500;font-size:13px;
   color:var(--acc);background:linear-gradient(180deg,rgba(109,230,162,.16),rgba(109,230,162,.06));
   border:1px solid rgba(109,230,162,.4);border-radius:6px;padding:11px;cursor:pointer;
   transition:transform .2s,box-shadow .2s}
-.login-card button:hover{transform:translateY(-1px);box-shadow:0 8px 22px -10px rgba(109,230,162,.5)}
+.login-card button:hover{transform:translateY(-1px);border-color:var(--acc)}
 .login-err{color:var(--red);font-family:var(--mono);font-size:11.5px;margin-top:14px;min-height:16px}
 
 /* ── APP SHELL ── */
@@ -49,7 +49,7 @@ a{color:var(--acc);text-decoration:none}
   border-bottom:1px solid var(--line);padding:14px 24px;display:flex;align-items:center;
   justify-content:space-between;gap:16px;flex-wrap:wrap}
 .topbar .brand{font-size:15px;font-weight:600;display:flex;align-items:center;gap:9px}
-.topbar .brand .dot{width:7px;height:7px;border-radius:50%;background:var(--acc);box-shadow:0 0 8px var(--acc)}
+.topbar .brand .dot{width:7px;height:7px;border-radius:2px;background:var(--acc)}
 .topbar .actions{display:flex;gap:10px;align-items:center}
 .editor-locale{display:flex;align-items:center;gap:3px;padding:3px;background:var(--bg);border:1px solid var(--line);border-radius:6px}
 .editor-locale button{font-family:var(--mono);font-size:11px;padding:5px 8px;border:0;border-radius:3px;background:transparent;color:var(--ink-mute);cursor:pointer}
@@ -65,7 +65,7 @@ body.editor-en #add-skill,body.editor-en #add-project,body.editor-en #add-openso
 .btn:hover{color:var(--ink);border-color:var(--ink-mute)}
 .btn-primary{color:var(--acc);border-color:rgba(109,230,162,.4);
   background:linear-gradient(180deg,rgba(109,230,162,.16),rgba(109,230,162,.06))}
-.btn-primary:hover{transform:translateY(-1px);box-shadow:0 6px 18px -8px rgba(109,230,162,.5);color:var(--acc)}
+.btn-primary:hover{transform:translateY(-1px);border-color:var(--acc);color:var(--acc)}
 .btn-danger{color:var(--red);border-color:rgba(232,128,128,.3)}
 .btn-danger:hover{color:var(--red);border-color:rgba(232,128,128,.5)}
 
@@ -93,8 +93,8 @@ h2.field-title{font-size:16px;font-weight:500;margin-bottom:4px}
 input[type=text],input[type=password],input[type=number],textarea,select{
   width:100%;font-family:var(--mono);font-size:12.5px;color:var(--ink);
   background:var(--bg);border:1px solid var(--line-2);border-radius:5px;padding:9px 11px;outline:none;
-  transition:border-color .2s,box-shadow .2s}
-input:focus,textarea:focus,select:focus{border-color:var(--acc);box-shadow:0 0 0 3px rgba(109,230,162,.1)}
+  transition:border-color .2s,outline-color .2s}
+input:focus,textarea:focus,select:focus{border-color:var(--acc);outline:2px solid rgba(109,230,162,.24);outline-offset:2px}
 textarea{resize:vertical;min-height:60px;line-height:1.6}
 input[type=color]{width:44px;height:34px;border:1px solid var(--line-2);border-radius:5px;
   background:var(--bg);cursor:pointer;padding:3px}
@@ -191,11 +191,11 @@ input[type=range]{width:100%;accent-color:var(--acc);cursor:pointer}
 .theme-stage[data-button="solid"] .theme-preview-button{background:var(--pv-acc);color:var(--pv-bg)}
 .theme-stage[data-button="minimal"] .theme-preview-button{border-color:transparent;border-radius:0;border-bottom-color:var(--pv-acc);padding-inline:2px}
 .theme-stage[data-animation="shine"] .theme-preview-button::after{content:'';position:absolute;inset:0;background:linear-gradient(110deg,transparent 28%,rgba(255,255,255,.5) 48%,transparent 68%);transform:translateX(-130%);animation:themeShine 2.5s infinite}
-.theme-stage[data-animation="glow"] .theme-preview-button{animation:themeGlow 2.2s ease-in-out infinite}
+.theme-stage[data-animation="glow"] .theme-preview-button{outline:1px solid transparent;animation:themeRing 2.2s ease-in-out infinite}
 .theme-stage[data-animation="lift"] .theme-preview-button{animation:themeLift 2.2s ease-in-out infinite}
 .theme-stage[data-animation="underline"] .theme-preview-button{background-image:linear-gradient(var(--pv-acc),var(--pv-acc));background-size:45% 1px;background-position:10px calc(100% - 5px);background-repeat:no-repeat}
 @keyframes themeShine{55%,100%{transform:translateX(130%)}}
-@keyframes themeGlow{50%{box-shadow:0 0 20px color-mix(in srgb,var(--pv-acc) 42%,transparent)}}
+@keyframes themeRing{50%{outline-color:color-mix(in srgb,var(--pv-acc) 62%,transparent);outline-offset:3px}}
 @keyframes themeLift{50%{transform:translateY(-3px)}}
 .theme-preview-card{position:absolute;z-index:1;right:22px;bottom:20px;width:26%;height:78px;
   border:1px solid color-mix(in srgb,var(--pv-ink) 13%,transparent);border-radius:var(--pv-radius);
@@ -467,7 +467,7 @@ input[type=range]{width:100%;accent-color:var(--acc);cursor:pointer}
             <div class="theme-group-head"><div><h3>GitHub &amp; action buttons</h3><p>Choose the surface and hover language independently. Gradients use your two accent colors.</p></div></div>
             <div class="theme-control-grid">
               <div class="field"><label for="theme-button-style">Button style</label><select id="theme-button-style"><option value="gradient">Gradient</option><option value="glass">Glass</option><option value="solid">Solid accent</option><option value="outline">Outline</option><option value="minimal">Minimal underline</option></select></div>
-              <div class="field"><label for="theme-button-animation">Button animation</label><select id="theme-button-animation"><option value="shine">Gradient shine</option><option value="lift">Lift</option><option value="glow">Glow</option><option value="underline">Underline sweep</option><option value="none">None</option></select></div>
+              <div class="field"><label for="theme-button-animation">Button animation</label><select id="theme-button-animation"><option value="shine">Gradient shine</option><option value="lift">Lift</option><option value="glow">Accent ring</option><option value="underline">Underline sweep</option><option value="none">None</option></select></div>
               <div class="theme-range"><label for="theme-gradient-angle">Gradient angle <output id="gradient-angle-val">120°</output></label><input type="range" id="theme-gradient-angle" min="0" max="360" step="5" /></div>
               <div class="theme-range"><label for="theme-radius">Corner radius <output id="radius-val">8px</output></label><input type="range" id="theme-radius" min="0" max="24" step="1" /></div>
             </div>

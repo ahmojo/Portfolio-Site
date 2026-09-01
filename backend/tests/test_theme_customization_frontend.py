@@ -28,10 +28,10 @@ def test_admin_theme_studio_exposes_complete_customization_controls():
     ):
         assert f'id="{control_id}"' in admin
 
-    for option in ("rails", "brackets", "aurora", "gradient", "glass", "underline"):
+    for option in ("rails", "grid", "gradient", "glass", "underline"):
         assert f'value="{option}"' in admin
 
-    assert "siteContent.theme={...THEME_DEFAULTS,...(siteContent.theme||{})}" in admin
+    assert "siteContent.theme=normalizeTheme(siteContent.theme)" in admin
     assert "data-theme-preset=\"paper\"" in admin
     assert 'id="theme-stage"' in admin
 
@@ -43,18 +43,18 @@ def test_public_site_applies_palette_layout_motion_buttons_and_decoration():
     assert "root.setProperty('--line',mixHex(theme.bg,theme.ink,.16))" in html
     assert "root.setProperty('--maxw',theme.content_width+'px')" in html
     assert "document.body.dataset.background=theme.background_style" in html
-    assert "document.body.dataset.decoration=theme.decoration" in html
+    assert "const safeDecoration=['rails','grid'].includes(theme.decoration)?theme.decoration:'none'" in html
+    assert "document.body.dataset.decoration=safeDecoration" in html
     assert "document.body.dataset.buttonStyle=theme.button_style" in html
     assert "document.body.dataset.buttonAnimation" in html
     assert "root.setProperty('--decor-intensity',theme.decoration_intensity/100)" in html
     assert 'data-decoration="none"' in html
     assert 'body[data-decoration="rails"]' in html
-    assert 'body[data-decoration="brackets"]' in html
     assert 'body[data-button-style="gradient"]' in html
     assert 'body[data-button-animation="underline"]' in html
 
 
-def test_legacy_particle_network_cannot_render_or_be_selected():
+def test_unsafe_legacy_decorations_cannot_render_or_be_selected():
     public = (ROOT / "index.html").read_text(encoding="utf-8")
     admin = (ROOT / "admin" / "admin.html").read_text(encoding="utf-8")
 
@@ -63,6 +63,9 @@ def test_legacy_particle_network_cannot_render_or_be_selected():
         "hero particle network",
         "__setParticles",
         'data-decoration="particles"',
+        'data-decoration="brackets"',
+        'data-decoration="aurora"',
+        "filter:blur(90px)",
     ):
         assert retired_fragment not in public
 
@@ -70,6 +73,11 @@ def test_legacy_particle_network_cannot_render_or_be_selected():
         'value="particles"',
         'id="theme-particles"',
         'data-decoration="particles"',
+        'value="brackets"',
+        'value="aurora"',
+        'data-decoration="brackets"',
+        'data-decoration="aurora"',
+        "themeAurora",
     ):
         assert retired_fragment not in admin
 
@@ -107,6 +115,19 @@ def test_public_accent_feedback_has_no_blurred_colored_shadows():
     assert "@keyframes themeRing" in admin_html
 
 
+def test_featured_project_has_no_composited_highlight_layer():
+    html = (ROOT / "index.html").read_text(encoding="utf-8")
+
+    assert ".proj.feat::before{display:none}" in html
+    assert ".proj.feat:hover .feat-media video" not in html
+    assert "filter:brightness" not in html
+
+    featured = re.search(r"\.proj\.feat\{(?P<rule>[^}]+)\}", html)
+    assert featured
+    assert "box-shadow:none" in featured.group("rule")
+    assert "rgba(var(--acc-rgb)" not in featured.group("rule")
+
+
 def test_footer_work_status_is_flat_and_has_no_live_light():
     html = (ROOT / "index.html").read_text(encoding="utf-8")
 
@@ -114,7 +135,13 @@ def test_footer_work_status_is_flat_and_has_no_live_light():
     assert 'class="now-work"' in html
     assert "live-dot" not in html
     assert "now-pill" not in html
-    assert ".now-label::before" in html
+    assert ".now-bar .now-label::before{content:'//'" in html
+
+    bar = re.search(r"\.now-bar\{(?P<rule>[^}]+)\}", html)
+    assert bar
+    assert "border" not in bar.group("rule")
+    assert "background" not in bar.group("rule")
+    assert "box-shadow" not in bar.group("rule")
 
 
 def test_preview_opens_the_unsaved_draft_without_publishing():

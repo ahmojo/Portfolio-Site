@@ -126,13 +126,14 @@ class SiteContentOpenSourceTests(unittest.TestCase):
         self.assertEqual(content.theme.button_style, "gradient")
         self.assertEqual(content.theme.content_width, 820)
 
-    def test_legacy_particle_decoration_is_retired_on_load(self):
-        content = SiteContent.model_validate(
-            {"theme": {"decoration": "particles", "particles": 300}}
-        )
+    def test_unsafe_legacy_decorations_are_retired_on_load(self):
+        for decoration in ("particles", "brackets", "aurora"):
+            content = SiteContent.model_validate(
+                {"theme": {"decoration": decoration, "particles": 300}}
+            )
 
-        self.assertEqual(content.theme.decoration, "none")
-        self.assertNotIn("particles", content.theme.model_dump())
+            self.assertEqual(content.theme.decoration, "none")
+            self.assertNotIn("particles", content.theme.model_dump())
 
     def test_theme_options_are_validated_before_they_are_saved(self):
         with self.assertRaises(ValidationError):

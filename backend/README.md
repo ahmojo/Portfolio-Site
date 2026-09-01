@@ -21,7 +21,7 @@ FastAPI + SQLite backend for the portfolio site. Runs **locally**.
 | `/api/now` | GET | current "what I'm doing" status |
 | `/api/now` | PUT | update status `{status, detail, token?}` |
 | `/api/contact` | POST | store + optionally email a contact message `{name, email, message}` |
-| `/api/feedback` | POST | anonymous private rating with optional comment |
+| `/api/feedback` | POST | anonymous private rating with optional discovery source and comment |
 | `/api/feedback` | GET | admin-only feedback summary and recent entries |
 | `/api/docs` | — | interactive Swagger UI |
 
@@ -91,7 +91,9 @@ The panel lets you edit, live, with a save button:
 - **Open Source** — edit, reorder, add, or hide automatically discovered merged PRs;
   title, description, and technology changes remain stored in SQLite
 - **Learning** — courses & projects (link type or certificate-preview type)
-- **Theme** — background / accent / text colors via pickers + particle count slider
+- **Theme studio** — complete palette, background treatment, side decoration,
+  GitHub button style and animation, motion level, texture, corner radius, and
+  content width. Existing content gets safe defaults for every new option.
 
 Changes are saved to SQLite and served to the public site via `/api/content`.
 The public page fetches that blob on load and rebuilds itself; if the API is

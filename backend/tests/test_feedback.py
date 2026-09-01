@@ -40,11 +40,12 @@ class FeedbackTests(unittest.TestCase):
             setattr(settings, name, value)
         self.temp_dir.cleanup()
 
-    def test_positive_and_negative_feedback_store_only_required_fields(self):
+    def test_feedback_stores_rating_optional_source_comment_and_timestamp(self):
         positive = self.client.post(
             "/api/feedback",
             json={
                 "rating": "positive",
+                "source": "linkedin",
                 "comment": "<script>alert(1)</script>",
             },
         )
@@ -60,13 +61,17 @@ class FeedbackTests(unittest.TestCase):
                 row["name"] for row in conn.execute("PRAGMA table_info(feedback)")
             }
             rows = conn.execute(
-                "SELECT rating, comment, created_at FROM feedback ORDER BY id"
+                "SELECT rating, comment, source, created_at FROM feedback ORDER BY id"
             ).fetchall()
 
-        self.assertEqual(columns, {"id", "rating", "comment", "created_at"})
+        self.assertEqual(
+            columns, {"id", "rating", "comment", "source", "created_at"}
+        )
         self.assertEqual(rows[0]["rating"], "positive")
+        self.assertEqual(rows[0]["source"], "linkedin")
         self.assertEqual(rows[0]["comment"], "<script>alert(1)</script>")
         self.assertEqual(rows[1]["rating"], "negative")
+        self.assertEqual(rows[1]["source"], "")
         self.assertEqual(rows[1]["comment"], "")
 
     def test_invalid_rating_and_too_long_comment_are_rejected(self):
@@ -76,9 +81,40 @@ class FeedbackTests(unittest.TestCase):
         too_long = self.client.post(
             "/api/feedback", json={"rating": "positive", "comment": "x" * 1001}
         )
+        invalid_source = self.client.post(
+            "/api/feedback", json={"rating": "positive", "source": "instagram"}
+        )
 
         self.assertEqual(invalid_rating.status_code, 422)
         self.assertEqual(too_long.status_code, 422)
+        self.assertEqual(invalid_source.status_code, 422)
+
+    def test_existing_feedback_table_is_migrated_with_blank_source(self):
+        with db.get_conn() as conn:
+            conn.execute("DROP TABLE feedback")
+            conn.execute(
+                """
+                CREATE TABLE feedback (
+                    id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    rating TEXT NOT NULL,
+                    comment TEXT NOT NULL DEFAULT '',
+                    created_at TEXT NOT NULL DEFAULT (datetime('now'))
+                )
+                """
+            )
+            conn.execute(
+                "INSERT INTO feedback (rating, comment) VALUES ('positive', 'legacy')"
+            )
+
+        feedback_storage.init_feedback_schema()
+
+        with db.get_conn() as conn:
+            row = conn.execute(
+                "SELECT rating, comment, source FROM feedback"
+            ).fetchone()
+        self.assertEqual(dict(row), {
+            "rating": "positive", "comment": "legacy", "source": ""
+        })
 
     def test_empty_comment_is_valid_and_honeypot_is_not_stored(self):
         honeypot = self.client.post(
@@ -114,7 +150,12 @@ class FeedbackTests(unittest.TestCase):
         self.assertEqual(response.status_code, 503)
 
     def test_rate_limit_and_admin_only_summary(self):
-        for _ in range(3):
+        response = self.client.post(
+            "/api/feedback",
+            json={"rating": "positive", "source": "linkedin"},
+        )
+        self.assertEqual(response.status_code, 201)
+        for _ in range(2):
             response = self.client.post(
                 "/api/feedback", json={"rating": "positive"}
             )
@@ -137,6 +178,8 @@ class FeedbackTests(unittest.TestCase):
         self.assertEqual(summary.json()["total"], 3)
         self.assertEqual(summary.json()["positive"], 3)
         self.assertEqual(summary.json()["negative"], 0)
+        self.assertTrue(all("source" in item for item in summary.json()["recent"]))
+        self.assertEqual(summary.json()["recent"][-1]["source"], "linkedin")
 
 
 if __name__ == "__main__":

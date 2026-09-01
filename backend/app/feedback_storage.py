@@ -6,6 +6,16 @@ from . import db
 FEEDBACK_RETENTION_DAYS = 180
 MAX_RECENT_FEEDBACK = 50
 _RATINGS = {"positive", "negative"}
+_SOURCES = {
+    "",
+    "linkedin",
+    "github",
+    "bootdev",
+    "recruiting",
+    "search",
+    "recommendation",
+    "other",
+}
 
 
 def init_feedback_schema() -> None:
@@ -17,11 +27,19 @@ def init_feedback_schema() -> None:
                 id         INTEGER PRIMARY KEY AUTOINCREMENT,
                 rating     TEXT    NOT NULL CHECK (rating IN ('positive', 'negative')),
                 comment    TEXT    NOT NULL DEFAULT '',
+                source     TEXT    NOT NULL DEFAULT '',
                 created_at TEXT    NOT NULL DEFAULT (datetime('now'))
             );
             CREATE INDEX IF NOT EXISTS idx_feedback_created ON feedback(created_at);
             """
         )
+        columns = {
+            row["name"] for row in conn.execute("PRAGMA table_info(feedback)")
+        }
+        if "source" not in columns:
+            conn.execute(
+                "ALTER TABLE feedback ADD COLUMN source TEXT NOT NULL DEFAULT ''"
+            )
         _prune(conn)
 
 
@@ -32,15 +50,17 @@ def _prune(conn) -> None:
     )
 
 
-def record_feedback(rating: str, comment: str) -> None:
-    """Store only the selected rating, plain-text comment, and UTC timestamp."""
+def record_feedback(rating: str, comment: str, source: str = "") -> None:
+    """Store the rating, optional discovery source, comment, and UTC timestamp."""
     if rating not in _RATINGS:
         raise ValueError("invalid feedback rating")
+    if source not in _SOURCES:
+        raise ValueError("invalid feedback source")
     with db.get_conn() as conn:
         _prune(conn)
         conn.execute(
-            "INSERT INTO feedback (rating, comment) VALUES (?, ?)",
-            (rating, comment),
+            "INSERT INTO feedback (rating, comment, source) VALUES (?, ?, ?)",
+            (rating, comment, source),
         )
 
 
@@ -57,7 +77,7 @@ def feedback_summary() -> dict:
         total = sum(counts.values())
         positive = counts.get("positive", 0)
         recent = conn.execute(
-            "SELECT rating, comment, created_at FROM feedback "
+            "SELECT rating, comment, source, created_at FROM feedback "
             "ORDER BY id DESC LIMIT ?",
             (MAX_RECENT_FEEDBACK,),
         ).fetchall()

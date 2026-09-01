@@ -338,42 +338,6 @@ section{padding:80px 0}
 #hero > .wrap > *:nth-child(4){animation-delay:.40s}
 #hero > .wrap > *:nth-child(5){animation-delay:.52s}
 @keyframes heroIn{to{opacity:1;transform:none}}
-#hero-canvas{
-  position:fixed;inset:0;width:100%;height:100%;
-  pointer-events:none;z-index:0;
-  -webkit-mask-image:
-    linear-gradient(to bottom,
-      black 0%,
-      black min(100vh, 780px),
-      transparent calc(min(100vh, 780px) + 80px)
-    ),
-    linear-gradient(to right,
-      black 0%,
-      black calc(50% - 430px),
-      transparent calc(50% - 390px),
-      transparent calc(50% + 390px),
-      black calc(50% + 430px),
-      black 100%
-    );
-  -webkit-mask-composite: source-in;
-  mask-image:
-    linear-gradient(to bottom,
-      black 0%,
-      black min(100vh, 780px),
-      transparent calc(min(100vh, 780px) + 80px)
-    ),
-    linear-gradient(to right,
-      black 0%,
-      black calc(50% - 430px),
-      transparent calc(50% - 390px),
-      transparent calc(50% + 390px),
-      black calc(50% + 430px),
-      black 100%
-    );
-  mask-composite: intersect;
-  opacity:.85;
-}
-body:not([data-decoration="particles"]) #hero-canvas{display:none}
 .site-decoration{position:fixed;inset:0;z-index:0;pointer-events:none;overflow:hidden;
   opacity:var(--decor-intensity);transition:opacity var(--ts)}
 .site-decoration::before,.site-decoration::after{content:'';position:absolute;display:none}
@@ -1393,7 +1357,7 @@ button.cct-metric-card:active{transform:translateY(1px)}
 }
 </style>
 </head>
-<body data-background="ambient" data-decoration="particles" data-button-style="gradient" data-button-animation="shine" data-motion="full">
+<body data-background="ambient" data-decoration="none" data-button-style="gradient" data-button-animation="shine" data-motion="full">
 
 <div class="progress" id="progress"></div>
 
@@ -1435,7 +1399,6 @@ button.cct-metric-card:active{transform:translateY(1px)}
   <a href="https://github.com/ahmojo" target="_blank" rel="noopener" class="github-link">GitHub <span class="arr">↗</span></a>
 </nav>
 
-<canvas id="hero-canvas"></canvas>
 <div class="site-decoration" id="site-decoration" aria-hidden="true"><span></span><span></span><span></span><span></span></div>
 <main>
 
@@ -2609,143 +2572,6 @@ function normalizeGithubRepo(value){
   document.addEventListener('keydown', e => { if (e.key === 'Escape') close(); });
 })();
 
-/* hero particle network */
-(function(){
-  const canvas = document.getElementById('hero-canvas');
-  if(!canvas || RM) return;
-  const ctx = canvas.getContext('2d');
-  let W, H, particles = [], dpr = Math.min(window.devicePixelRatio || 1, 2);
-  // color + count can be overridden by /api/content via window.__PARTICLES
-  const PCFG = window.__PARTICLES || {};
-  let RGB = PCFG.rgb || '109,230,162';
-  let COUNT = PCFG.count ?? 72;
-  let INTENSITY = Math.max(0,Math.min(1,PCFG.intensity ?? .58));
-  const LINK_DIST = 140, MOUSE_DIST = 190;
-  window.__setParticles = function(cfg){
-    if(!cfg) return;
-    if(typeof cfg.rgb === 'string') RGB=cfg.rgb;
-    if(typeof cfg.intensity === 'number'){
-      INTENSITY=Math.max(0,Math.min(1,cfg.intensity));
-    }
-    if(typeof cfg.count === 'number'){
-      const target = Math.max(0, Math.min(300, cfg.count|0));
-      COUNT = target;
-      // re-seed up/down to match
-      while(particles.length < target) particles.push(new Particle());
-      if(particles.length > target) particles.length = target;
-    }
-  };
-  let mouse = {x:-9999, y:-9999, active:false};
-
-  function resize(){
-    W = canvas.offsetWidth; H = canvas.offsetHeight;
-    canvas.width = W * dpr; canvas.height = H * dpr;
-    ctx.setTransform(dpr,0,0,dpr,0,0);
-  }
-
-  function sideX(){
-    const edge = W/2 - 390;
-    if(edge <= 0) return Math.random()*W;
-    return Math.random() < 0.5 ? Math.random()*edge : W - Math.random()*edge;
-  }
-
-  class Particle{
-    constructor(){
-      this.x = sideX();
-      this.y = Math.random()*H;
-      this.vx = (Math.random()-.5)*.18;
-      this.vy = (Math.random()-.5)*.18;
-      this.r = Math.random()*1.4+.6;
-      this.alpha = Math.random()*.5+.35;
-      this.baseX = this.x; this.baseY = this.y;   // gentle home position
-    }
-    update(){
-      // ATTRACT toward the cursor — pull, not push
-      if(mouse.active){
-        const dx = mouse.x - this.x, dy = mouse.y - this.y;
-        const d2 = dx*dx + dy*dy;
-        if(d2 < MOUSE_DIST*MOUSE_DIST && d2 > 4){
-          const d = Math.sqrt(d2);
-          const f = (1 - d/MOUSE_DIST) * 0.045;   // stronger when closer
-          this.vx += (dx/d) * f;
-          this.vy += (dy/d) * f;
-          // a touch of orbit so they swirl in rather than clump dead-center
-          this.vx += (-dy/d) * f * 0.35;
-          this.vy += ( dx/d) * f * 0.35;
-        }
-      }
-      // spring back toward home so the field settles after you leave
-      this.vx += (this.baseX - this.x) * 0.0016;
-      this.vy += (this.baseY - this.y) * 0.0016;
-      // friction + speed clamp for smoothness
-      this.vx *= 0.96; this.vy *= 0.96;
-      const sp = Math.hypot(this.vx, this.vy);
-      if(sp > 1.6){ this.vx = this.vx/sp*1.6; this.vy = this.vy/sp*1.6; }
-      this.x += this.vx; this.y += this.vy;
-      // soft walls
-      if(this.x<0){this.x=0;this.vx*=-.5} if(this.x>W){this.x=W;this.vx*=-.5}
-      if(this.y<0){this.y=0;this.vy*=-.5} if(this.y>H){this.y=H;this.vy*=-.5}
-    }
-    draw(){
-      ctx.beginPath();
-      ctx.arc(this.x, this.y, this.r, 0, Math.PI*2);
-      ctx.fillStyle = `rgba(${RGB},${this.alpha*INTENSITY})`;
-      ctx.fill();
-    }
-  }
-
-  function init(){ particles = Array.from({length:COUNT}, ()=>new Particle()); }
-
-  function frame(){
-    ctx.clearRect(0,0,W,H);
-    // particle-to-particle links — brighter & wider reach
-    for(let i=0;i<particles.length;i++){
-      const a = particles[i];
-      for(let j=i+1;j<particles.length;j++){
-        const b = particles[j];
-        const dx=a.x-b.x, dy=a.y-b.y, d=Math.sqrt(dx*dx+dy*dy);
-        if(d<LINK_DIST){
-          ctx.beginPath();
-          ctx.moveTo(a.x,a.y); ctx.lineTo(b.x,b.y);
-          ctx.strokeStyle=`rgba(${RGB},${(1-d/LINK_DIST)*0.34*INTENSITY})`;
-          ctx.lineWidth=.75; ctx.stroke();
-        }
-      }
-      // strong links to cursor when active — "connecting to it"
-      if(mouse.active){
-        const dx=a.x-mouse.x, dy=a.y-mouse.y, d=Math.sqrt(dx*dx+dy*dy);
-        if(d<MOUSE_DIST){
-          ctx.beginPath();
-          ctx.moveTo(a.x,a.y); ctx.lineTo(mouse.x,mouse.y);
-          ctx.strokeStyle=`rgba(${RGB},${(1-d/MOUSE_DIST)*0.6*INTENSITY})`;
-          ctx.lineWidth=1; ctx.stroke();
-        }
-      }
-    }
-    // cursor node itself
-    if(mouse.active){
-      ctx.beginPath();
-      ctx.arc(mouse.x, mouse.y, 3, 0, Math.PI*2);
-      ctx.fillStyle = `rgba(${RGB},${.9*INTENSITY})`;
-      ctx.fill();
-      ctx.beginPath();
-      ctx.arc(mouse.x, mouse.y, 7, 0, Math.PI*2);
-      ctx.strokeStyle = `rgba(${RGB},${.35*INTENSITY})`;
-      ctx.lineWidth = 1; ctx.stroke();
-    }
-    particles.forEach(p=>{ p.update(); p.draw(); });
-    requestAnimationFrame(frame);
-  }
-
-  window.addEventListener('resize', ()=>{ resize(); init(); });
-  window.addEventListener('pointermove', e => {
-    const r = canvas.getBoundingClientRect();
-    mouse.x = e.clientX - r.left; mouse.y = e.clientY - r.top; mouse.active = true;
-  });
-  window.addEventListener('pointerleave', () => { mouse.active = false; });
-  resize(); init(); frame();
-})();
-
 /* ─── content-driven rendering (from /api/content via /admin) ─── */
 /* Fetches the editable content blob; if successful it overrides the
    static defaults. On failure it silently does nothing, so the page
@@ -2828,7 +2654,7 @@ function normalizeGithubRepo(value){
     if(!t) return;
     const theme={
       bg:'#161a28',surface:'#232840',accent:'#6de6a2',accent_alt:'#7db2ee',ink:'#e6edf8',
-      background_style:'ambient',decoration:'particles',decoration_intensity:58,particles:72,
+      background_style:'ambient',decoration:'none',decoration_intensity:58,
       button_style:'gradient',button_animation:'shine',gradient_angle:120,radius:8,
       content_width:820,motion:'full',grain:10,...t,
     };
@@ -2861,11 +2687,6 @@ function normalizeGithubRepo(value){
     document.body.dataset.buttonStyle=theme.button_style;
     document.body.dataset.buttonAnimation=theme.motion==='none'?'none':theme.button_animation;
     document.body.dataset.motion=theme.motion;
-    if(window.__setParticles) window.__setParticles({
-      count:theme.decoration==='particles'?theme.particles:0,
-      rgb:hexToRgb(theme.accent),
-      intensity:theme.decoration_intensity/100,
-    });
   }
 
   function applyHero(h){

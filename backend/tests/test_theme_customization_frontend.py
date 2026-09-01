@@ -46,12 +46,35 @@ def test_public_site_applies_palette_layout_motion_buttons_and_decoration():
     assert "document.body.dataset.decoration=theme.decoration" in html
     assert "document.body.dataset.buttonStyle=theme.button_style" in html
     assert "document.body.dataset.buttonAnimation" in html
-    assert "intensity:theme.decoration_intensity/100" in html
-    assert 'data-decoration="particles"' in html
+    assert "root.setProperty('--decor-intensity',theme.decoration_intensity/100)" in html
+    assert 'data-decoration="none"' in html
     assert 'body[data-decoration="rails"]' in html
     assert 'body[data-decoration="brackets"]' in html
     assert 'body[data-button-style="gradient"]' in html
     assert 'body[data-button-animation="underline"]' in html
+
+
+def test_legacy_particle_network_cannot_render_or_be_selected():
+    public = (ROOT / "index.html").read_text(encoding="utf-8")
+    admin = (ROOT / "admin" / "admin.html").read_text(encoding="utf-8")
+
+    for retired_fragment in (
+        'id="hero-canvas"',
+        "hero particle network",
+        "__setParticles",
+        'data-decoration="particles"',
+    ):
+        assert retired_fragment not in public
+
+    for retired_fragment in (
+        'value="particles"',
+        'id="theme-particles"',
+        'data-decoration="particles"',
+    ):
+        assert retired_fragment not in admin
+
+    assert "decoration:'none'" in public
+    assert "decoration:'none'" in admin
 
 
 def test_background_modes_do_not_reintroduce_large_radial_glows():

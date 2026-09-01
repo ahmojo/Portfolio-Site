@@ -114,5 +114,26 @@ class SiteContentOpenSourceTests(unittest.TestCase):
 
         self.assertFalse(content.cct_metrics.unique_cloners_14d)
         self.assertTrue(content.cct_metrics.release_downloads)
+
+    def test_legacy_theme_gets_complete_customization_defaults(self):
+        content = SiteContent.model_validate(
+            {"theme": {"bg": "#101820", "accent": "#f2b84b"}}
+        )
+
+        self.assertEqual(content.theme.bg, "#101820")
+        self.assertEqual(content.theme.surface, "#232840")
+        self.assertEqual(content.theme.decoration, "particles")
+        self.assertEqual(content.theme.button_style, "gradient")
+        self.assertEqual(content.theme.content_width, 820)
+
+    def test_theme_options_are_validated_before_they_are_saved(self):
+        with self.assertRaises(ValidationError):
+            SiteContent.model_validate({"theme": {"bg": "navy"}})
+
+        with self.assertRaises(ValidationError):
+            SiteContent.model_validate({"theme": {"decoration": "random-dots"}})
+
+        with self.assertRaises(ValidationError):
+            SiteContent.model_validate({"theme": {"content_width": 2000}})
 if __name__ == "__main__":
     unittest.main()

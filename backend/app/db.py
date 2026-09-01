@@ -76,6 +76,7 @@ CREATE TABLE IF NOT EXISTS feedback (
     id         INTEGER PRIMARY KEY AUTOINCREMENT,
     rating     TEXT    NOT NULL CHECK (rating IN ('positive', 'negative')),
     comment    TEXT    NOT NULL DEFAULT '',
+    source     TEXT    NOT NULL DEFAULT '',
     created_at TEXT    NOT NULL DEFAULT (datetime('now'))
 );
 CREATE INDEX IF NOT EXISTS idx_feedback_created ON feedback(created_at);
@@ -247,9 +248,21 @@ DEFAULT_CONTENT = {
     ],
     "theme": {
         "bg": "#161a28",
+        "surface": "#232840",
         "accent": "#6de6a2",
+        "accent_alt": "#7db2ee",
         "ink": "#e6edf8",
+        "background_style": "ambient",
+        "decoration": "particles",
+        "decoration_intensity": 58,
         "particles": 72,
+        "button_style": "gradient",
+        "button_animation": "shine",
+        "gradient_angle": 120,
+        "radius": 8,
+        "content_width": 820,
+        "motion": "full",
+        "grain": 10,
     },
     "cct_metrics": {
         "release_downloads": True,

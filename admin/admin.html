@@ -79,7 +79,7 @@ body.editor-en #add-skill,body.editor-en #add-project,body.editor-en #add-openso
 .tab-btn.active{color:var(--acc);background:rgba(109,230,162,.08)}
 .tab-btn .n{font-size:10px;color:var(--ink-faint);width:18px}
 .tab-btn.active .n{color:var(--acc-dim)}
-.panel{padding:28px 32px;overflow-y:auto;max-width:760px}
+.panel{padding:28px 32px;overflow-y:auto;max-width:980px}
 .panel-section{display:none}
 .panel-section.active{display:block;animation:fade .25s ease}
 @keyframes fade{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
@@ -98,6 +98,7 @@ input:focus,textarea:focus,select:focus{border-color:var(--acc);box-shadow:0 0 0
 textarea{resize:vertical;min-height:60px;line-height:1.6}
 input[type=color]{width:44px;height:34px;border:1px solid var(--line-2);border-radius:5px;
   background:var(--bg);cursor:pointer;padding:3px}
+input[type=range]{width:100%;accent-color:var(--acc);cursor:pointer}
 .hint{font-family:var(--mono);font-size:10.5px;color:var(--ink-faint);margin-top:5px}
 .up-btn{position:absolute;right:5px;top:50%;transform:translateY(-50%);
   font-family:var(--mono);font-size:10px;padding:4px 9px;border-radius:4px;cursor:pointer;
@@ -134,11 +135,80 @@ input[type=color]{width:44px;height:34px;border:1px solid var(--line-2);border-r
   font-family:var(--mono);font-size:11px;padding:5px 9px;cursor:pointer}
 .chip-add:hover{color:var(--acc);border-color:var(--acc-dim)}
 
-/* theme preview */
-.theme-preview{display:flex;gap:18px;align-items:center;background:var(--bg);border:1px solid var(--line);
-  border-radius:8px;padding:18px;margin-top:10px}
-.theme-swatch{width:60px;height:60px;border-radius:8px;border:1px solid var(--line-2)}
-.theme-meta{font-family:var(--mono);font-size:11px;color:var(--ink-mute)}
+/* theme studio */
+.theme-studio{display:grid;gap:16px}
+.theme-group{padding:18px;border:1px solid var(--line);border-radius:10px;background:var(--bg-1)}
+.theme-group-head{display:flex;align-items:flex-start;justify-content:space-between;gap:18px;margin-bottom:15px}
+.theme-group-head h3{font-size:13px;font-weight:600;color:var(--ink)}
+.theme-group-head p{max-width:52ch;font:10.5px/1.5 var(--mono);color:var(--ink-mute)}
+.theme-color-grid{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:10px}
+.theme-color{display:grid;grid-template-columns:38px minmax(0,1fr);align-items:center;gap:9px;
+  padding:9px;border:1px solid var(--line);border-radius:7px;background:var(--bg)}
+.theme-color input[type=color]{width:38px;height:38px;border-radius:6px}
+.theme-color label{margin:0;font-size:9.5px}
+.theme-color output{display:block;margin-top:2px;font:9px/1.2 var(--mono);color:var(--ink-faint)}
+.theme-control-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}
+.theme-control-grid .field{margin:0}
+.theme-range{padding:11px 12px;border:1px solid var(--line);border-radius:7px;background:var(--bg)}
+.theme-range label{display:flex;justify-content:space-between;gap:12px}
+.theme-range output{color:var(--acc);font-variant-numeric:tabular-nums}
+.theme-range input{margin-top:7px}
+.theme-presets{display:flex;flex-wrap:wrap;gap:8px}
+.theme-preset{position:relative;min-width:128px;padding:10px 12px 10px 38px;text-align:left;
+  border:1px solid var(--line-2);border-radius:7px;background:var(--bg);color:var(--ink-dim);
+  font:10.5px/1.35 var(--mono);cursor:pointer;transition:border-color .2s,transform .2s,color .2s}
+.theme-preset::before{content:'';position:absolute;left:11px;top:50%;width:17px;height:17px;border-radius:5px;
+  transform:translateY(-50%);background:linear-gradient(135deg,var(--preset-a),var(--preset-b));
+  box-shadow:0 0 0 1px rgba(255,255,255,.14)}
+.theme-preset:hover{color:var(--ink);border-color:var(--acc-dim);transform:translateY(-1px)}
+.theme-preview{position:sticky;bottom:14px;z-index:4;padding:10px;margin-top:2px;
+  border:1px solid var(--line-2);border-radius:12px;background:rgba(15,18,32,.9);backdrop-filter:blur(14px);
+  box-shadow:0 24px 70px -32px rgba(0,0,0,.9)}
+.theme-preview-head{display:flex;align-items:center;justify-content:space-between;gap:16px;
+  padding:2px 4px 9px;font:9.5px/1 var(--mono);color:var(--ink-mute)}
+.theme-preview-head span:last-child{color:var(--acc)}
+.theme-stage{--pv-bg:#161a28;--pv-surface:#232840;--pv-acc:#6de6a2;--pv-alt:#7db2ee;
+  --pv-ink:#e6edf8;--pv-angle:120deg;--pv-radius:8px;position:relative;isolation:isolate;overflow:hidden;
+  min-height:250px;padding:20px 22px;border:1px solid color-mix(in srgb,var(--pv-ink) 14%,transparent);
+  border-radius:10px;background:var(--pv-bg);color:var(--pv-ink)}
+.theme-stage[data-background="ambient"]{background:radial-gradient(circle at 82% 12%,color-mix(in srgb,var(--pv-acc) 18%,transparent),transparent 36%),var(--pv-bg)}
+.theme-stage[data-background="mesh"]{background:radial-gradient(circle at 12% 88%,color-mix(in srgb,var(--pv-alt) 20%,transparent),transparent 38%),radial-gradient(circle at 88% 8%,color-mix(in srgb,var(--pv-acc) 20%,transparent),transparent 34%),var(--pv-bg)}
+.theme-stage[data-background="grid"]{background-image:linear-gradient(color-mix(in srgb,var(--pv-ink) 7%,transparent) 1px,transparent 1px),linear-gradient(90deg,color-mix(in srgb,var(--pv-ink) 7%,transparent) 1px,transparent 1px);background-size:24px 24px;background-color:var(--pv-bg)}
+.theme-stage[data-background="paper"]{background:radial-gradient(circle at 1px 1px,color-mix(in srgb,var(--pv-ink) 10%,transparent) 1px,transparent 0),var(--pv-bg);background-size:15px 15px}
+.theme-preview-nav{position:relative;z-index:2;display:flex;justify-content:space-between;align-items:center;
+  padding-bottom:18px;font:9px/1 var(--mono);color:color-mix(in srgb,var(--pv-ink) 58%,transparent)}
+.theme-preview-nav b{color:var(--pv-ink);font-weight:600}
+.theme-preview-copy{position:relative;z-index:2;max-width:min(76%,540px)}
+.theme-preview-copy small{font:9px/1 var(--mono);color:var(--pv-acc)}
+.theme-preview-copy h3{margin:8px 0 7px;font-size:clamp(22px,4vw,38px);line-height:.96;letter-spacing:-.045em}
+.theme-preview-copy p{max-width:48ch;color:color-mix(in srgb,var(--pv-ink) 66%,transparent);font-size:11px}
+.theme-preview-actions{display:flex;flex-wrap:wrap;gap:8px;margin-top:17px}
+.theme-preview-button{position:relative;overflow:hidden;display:inline-flex;padding:8px 11px;
+  border:1px solid color-mix(in srgb,var(--pv-acc) 42%,transparent);border-radius:var(--pv-radius);
+  color:var(--pv-ink);background:transparent;font:9.5px/1 var(--mono)}
+.theme-stage[data-button="gradient"] .theme-preview-button{border-color:transparent;background:linear-gradient(var(--pv-angle),var(--pv-acc),var(--pv-alt));color:var(--pv-bg)}
+.theme-stage[data-button="glass"] .theme-preview-button{background:color-mix(in srgb,var(--pv-surface) 78%,transparent);box-shadow:inset 0 1px rgba(255,255,255,.12)}
+.theme-stage[data-button="solid"] .theme-preview-button{background:var(--pv-acc);color:var(--pv-bg)}
+.theme-stage[data-button="minimal"] .theme-preview-button{border-color:transparent;border-radius:0;border-bottom-color:var(--pv-acc);padding-inline:2px}
+.theme-stage[data-animation="shine"] .theme-preview-button::after{content:'';position:absolute;inset:0;background:linear-gradient(110deg,transparent 28%,rgba(255,255,255,.5) 48%,transparent 68%);transform:translateX(-130%);animation:themeShine 2.5s infinite}
+.theme-stage[data-animation="glow"] .theme-preview-button{animation:themeGlow 2.2s ease-in-out infinite}
+.theme-stage[data-animation="lift"] .theme-preview-button{animation:themeLift 2.2s ease-in-out infinite}
+.theme-stage[data-animation="underline"] .theme-preview-button{background-image:linear-gradient(var(--pv-acc),var(--pv-acc));background-size:45% 1px;background-position:10px calc(100% - 5px);background-repeat:no-repeat}
+@keyframes themeShine{55%,100%{transform:translateX(130%)}}
+@keyframes themeGlow{50%{box-shadow:0 0 20px color-mix(in srgb,var(--pv-acc) 42%,transparent)}}
+@keyframes themeLift{50%{transform:translateY(-3px)}}
+.theme-preview-card{position:absolute;z-index:1;right:22px;bottom:20px;width:26%;height:78px;
+  border:1px solid color-mix(in srgb,var(--pv-ink) 13%,transparent);border-radius:var(--pv-radius);
+  background:color-mix(in srgb,var(--pv-surface) 82%,transparent)}
+.theme-preview-decoration{position:absolute;inset:0;z-index:0;pointer-events:none;opacity:var(--pv-intensity,.58)}
+.theme-stage[data-decoration="none"] .theme-preview-decoration{display:none}
+.theme-stage[data-decoration="particles"] .theme-preview-decoration{background:radial-gradient(circle,var(--pv-acc) 0 1px,transparent 1.5px);background-size:27px 31px;mask-image:linear-gradient(90deg,#000,transparent 28%,transparent 72%,#000)}
+.theme-stage[data-decoration="rails"] .theme-preview-decoration{inset:0 12px;background:repeating-linear-gradient(0deg,var(--pv-alt) 0 1px,transparent 1px 14px);mask-image:linear-gradient(90deg,#000 0 2px,transparent 2px calc(100% - 2px),#000 calc(100% - 2px))}
+.theme-stage[data-decoration="grid"] .theme-preview-decoration{background-image:linear-gradient(color-mix(in srgb,var(--pv-alt) 35%,transparent) 1px,transparent 1px),linear-gradient(90deg,color-mix(in srgb,var(--pv-alt) 35%,transparent) 1px,transparent 1px);background-size:18px 18px;mask-image:linear-gradient(90deg,#000,transparent 30%,transparent 70%,#000)}
+.theme-stage[data-decoration="brackets"] .theme-preview-decoration{inset:14px;border:1px solid var(--pv-alt);clip-path:polygon(0 0,18% 0,18% 1px,1px 1px,1px 26%,0 26%,0 100%,1px 100%,1px 74%,18% 74%,18% 75%,0 75%,0 26%,1px 26%,1px 1px,99% 1px,99% 26%,100% 26%,100% 0)}
+.theme-stage[data-decoration="aurora"] .theme-preview-decoration{inset:-40%;background:conic-gradient(from 80deg,transparent,var(--pv-acc),transparent,var(--pv-alt),transparent);filter:blur(30px);animation:themeAurora 12s linear infinite}
+@keyframes themeAurora{to{transform:rotate(360deg)}}
+.theme-meta{display:flex;gap:14px;flex-wrap:wrap;padding:8px 4px 0;font:9px/1.3 var(--mono);color:var(--ink-mute)}
 .theme-meta b{color:var(--ink)}
 
 /* shared project metric controls */
@@ -181,6 +251,8 @@ input[type=color]{width:44px;height:34px;border:1px solid var(--line-2);border-r
 .fb-rating{font-weight:500;text-transform:uppercase;letter-spacing:.6px}
 .fb-rating.positive{color:var(--acc)}
 .fb-rating.negative{color:var(--red)}
+.fb-source{display:inline-flex;align-items:center;margin-right:auto;padding:2px 6px;
+  border:1px solid var(--line);border-radius:4px;color:var(--ink-mute);text-transform:none;letter-spacing:0}
 .fb-comment{color:var(--ink-dim);font-size:12.5px;white-space:pre-wrap;overflow-wrap:anywhere}
 .fb-empty{color:var(--ink-faint);font-style:italic}
 @media(max-width:640px){
@@ -214,6 +286,10 @@ input[type=color]{width:44px;height:34px;border:1px solid var(--line-2);border-r
   .sidebar{flex-direction:row;overflow-x:auto;border-right:none;border-bottom:1px solid var(--line);padding:10px}
   .tab-btn{white-space:nowrap}
   .panel{padding:20px}
+  .theme-color-grid,.theme-control-grid{grid-template-columns:1fr}
+  .theme-preview{position:relative;bottom:auto}
+  .theme-preview-card{display:none}
+  .theme-preview-copy{max-width:100%}
   .field-row.r2,.field-row.r3,.field-row.r4{grid-template-columns:1fr}
 }
 </style>
@@ -353,23 +429,66 @@ input[type=color]{width:44px;height:34px;border:1px solid var(--line-2);border-r
 
       <!-- THEME -->
       <div class="panel-section" data-section="theme">
-        <h2 class="field-title">Theme</h2>
-        <p class="field-desc">// live colors + particle density. apply with save.</p>
-        <div class="field-row r3">
-          <div class="field"><label>Background</label><input type="color" id="theme-bg" /></div>
-          <div class="field"><label>Accent</label><input type="color" id="theme-accent" /></div>
-          <div class="field"><label>Text</label><input type="color" id="theme-ink" /></div>
-        </div>
-        <div class="field">
-          <label>Particle count: <span id="particle-val" style="color:var(--acc)">72</span></label>
-          <input type="range" id="theme-particles" min="0" max="200" step="4" style="width:100%;accent-color:var(--acc)" />
-        </div>
-        <div class="theme-preview">
-          <div class="theme-swatch" id="theme-swatch"></div>
-          <div class="theme-meta">
-            bg <b id="m-bg"></b><br/>
-            accent <b id="m-acc"></b><br/>
-            ink <b id="m-ink"></b>
+        <h2 class="field-title">Theme studio</h2>
+        <p class="field-desc">// colors, atmosphere, side details, GitHub buttons, spacing and motion. save publishes everything together.</p>
+        <div class="theme-studio">
+          <section class="theme-group">
+            <div class="theme-group-head"><div><h3>Quick palettes</h3><p>Start from a coherent palette, then tune every value below.</p></div></div>
+            <div class="theme-presets">
+              <button type="button" class="theme-preset" data-theme-preset="signature" style="--preset-a:#161a28;--preset-b:#6de6a2">Signature</button>
+              <button type="button" class="theme-preset" data-theme-preset="midnight" style="--preset-a:#0b1020;--preset-b:#69a7ff">Midnight</button>
+              <button type="button" class="theme-preset" data-theme-preset="graphite" style="--preset-a:#171715;--preset-b:#d6b36a">Graphite</button>
+              <button type="button" class="theme-preset" data-theme-preset="paper" style="--preset-a:#f1eee7;--preset-b:#b43b2f">Light paper</button>
+            </div>
+          </section>
+
+          <section class="theme-group">
+            <div class="theme-group-head"><div><h3>Palette</h3><p>Background now updates its related surfaces and contrast colors instead of leaving the old dark layers behind.</p></div></div>
+            <div class="theme-color-grid">
+              <div class="theme-color"><input type="color" id="theme-bg" /><div><label for="theme-bg">Background</label><output id="theme-bg-value"></output></div></div>
+              <div class="theme-color"><input type="color" id="theme-surface" /><div><label for="theme-surface">Surface</label><output id="theme-surface-value"></output></div></div>
+              <div class="theme-color"><input type="color" id="theme-accent" /><div><label for="theme-accent">Accent</label><output id="theme-accent-value"></output></div></div>
+              <div class="theme-color"><input type="color" id="theme-accent-alt" /><div><label for="theme-accent-alt">Gradient end</label><output id="theme-accent-alt-value"></output></div></div>
+              <div class="theme-color"><input type="color" id="theme-ink" /><div><label for="theme-ink">Text</label><output id="theme-ink-value"></output></div></div>
+            </div>
+          </section>
+
+          <section class="theme-group">
+            <div class="theme-group-head"><div><h3>Atmosphere &amp; side decoration</h3><p>Use structured rails, brackets or grids instead of the floating particle network.</p></div></div>
+            <div class="theme-control-grid">
+              <div class="field"><label for="theme-background-style">Background treatment</label><select id="theme-background-style"><option value="solid">Solid</option><option value="ambient">Ambient spotlight</option><option value="mesh">Asymmetric mesh</option><option value="grid">Technical grid</option><option value="paper">Dotted paper</option></select></div>
+              <div class="field"><label for="theme-decoration">Side decoration</label><select id="theme-decoration"><option value="particles">Particle network</option><option value="rails">Technical rails</option><option value="grid">Side grid</option><option value="brackets">Viewport brackets</option><option value="aurora">Soft aurora</option><option value="none">None</option></select></div>
+              <div class="theme-range"><label for="theme-decoration-intensity">Decoration intensity <output id="decoration-intensity-val">58%</output></label><input type="range" id="theme-decoration-intensity" min="0" max="100" step="1" /></div>
+              <div class="theme-range" id="particle-field"><label for="theme-particles">Particle count <output id="particle-val">72</output></label><input type="range" id="theme-particles" min="0" max="300" step="4" /></div>
+              <div class="theme-range"><label for="theme-grain">Texture <output id="grain-val">10%</output></label><input type="range" id="theme-grain" min="0" max="40" step="1" /></div>
+              <div class="field"><label for="theme-motion">Page motion</label><select id="theme-motion"><option value="full">Expressive</option><option value="subtle">Subtle</option><option value="none">None</option></select></div>
+            </div>
+          </section>
+
+          <section class="theme-group">
+            <div class="theme-group-head"><div><h3>GitHub &amp; action buttons</h3><p>Choose the surface and hover language independently. Gradients use your two accent colors.</p></div></div>
+            <div class="theme-control-grid">
+              <div class="field"><label for="theme-button-style">Button style</label><select id="theme-button-style"><option value="gradient">Gradient</option><option value="glass">Glass</option><option value="solid">Solid accent</option><option value="outline">Outline</option><option value="minimal">Minimal underline</option></select></div>
+              <div class="field"><label for="theme-button-animation">Button animation</label><select id="theme-button-animation"><option value="shine">Gradient shine</option><option value="lift">Lift</option><option value="glow">Glow</option><option value="underline">Underline sweep</option><option value="none">None</option></select></div>
+              <div class="theme-range"><label for="theme-gradient-angle">Gradient angle <output id="gradient-angle-val">120°</output></label><input type="range" id="theme-gradient-angle" min="0" max="360" step="5" /></div>
+              <div class="theme-range"><label for="theme-radius">Corner radius <output id="radius-val">8px</output></label><input type="range" id="theme-radius" min="0" max="24" step="1" /></div>
+            </div>
+          </section>
+
+          <section class="theme-group">
+            <div class="theme-group-head"><div><h3>Layout</h3><p>Control how compact or editorial the public page feels on larger screens.</p></div></div>
+            <div class="theme-range"><label for="theme-content-width">Content width <output id="content-width-val">820px</output></label><input type="range" id="theme-content-width" min="680" max="1120" step="20" /></div>
+          </section>
+
+          <div class="theme-preview">
+            <div class="theme-preview-head"><span>Live preview · unsaved</span><span id="theme-preview-label">ambient / particles</span></div>
+            <div class="theme-stage" id="theme-stage" data-background="ambient" data-decoration="particles" data-button="gradient" data-animation="shine">
+              <div class="theme-preview-decoration" aria-hidden="true"></div>
+              <div class="theme-preview-nav"><b>&lt;/&gt; Ahmet</b><span>work&nbsp;&nbsp;about&nbsp;&nbsp;contact</span></div>
+              <div class="theme-preview-copy"><small>Backend developer · Aargau</small><h3>Systems that stay understandable.</h3><p>The preview uses the same palette, button treatment and side decoration as the public site.</p><div class="theme-preview-actions"><span class="theme-preview-button">GitHub ↗</span><span class="theme-preview-button">View project ↓</span></div></div>
+              <div class="theme-preview-card" aria-hidden="true"></div>
+            </div>
+            <div class="theme-meta"><span>bg <b id="m-bg"></b></span><span>surface <b id="m-surface"></b></span><span>accent <b id="m-acc"></b></span><span>text <b id="m-ink"></b></span></div>
           </div>
         </div>
       </div>
@@ -455,6 +574,18 @@ const DEFAULT_OPEN_SOURCE = [
   {repo:'pygments/pygments',pr:3180,title:'CSS-Farbe erweitert',desc:'transparent in Styles und HTML-Ausgabe unterstützt und getestet.',tech:'Python · pytest'},
   {repo:'go-git/go-git',pr:2248,title:'Gitignore-API erklärt',desc:'Pfade, Verzeichnisse und Match-Priorität präziser dokumentiert.',tech:'Go · API Docs'}
 ];
+const THEME_DEFAULTS = {
+  bg:'#161a28',surface:'#232840',accent:'#6de6a2',accent_alt:'#7db2ee',ink:'#e6edf8',
+  background_style:'ambient',decoration:'particles',decoration_intensity:58,particles:72,
+  button_style:'gradient',button_animation:'shine',gradient_angle:120,radius:8,
+  content_width:820,motion:'full',grain:10,
+};
+const THEME_PRESETS = {
+  signature:{...THEME_DEFAULTS},
+  midnight:{...THEME_DEFAULTS,bg:'#0b1020',surface:'#151d33',accent:'#75e6c4',accent_alt:'#69a7ff',ink:'#edf4ff',background_style:'mesh',decoration:'rails'},
+  graphite:{...THEME_DEFAULTS,bg:'#171715',surface:'#292824',accent:'#d6b36a',accent_alt:'#97a69b',ink:'#f1eee5',background_style:'ambient',decoration:'brackets',button_style:'outline'},
+  paper:{...THEME_DEFAULTS,bg:'#f1eee7',surface:'#fffaf0',accent:'#b43b2f',accent_alt:'#315c78',ink:'#20201d',background_style:'paper',decoration:'rails',button_style:'solid',motion:'subtle',grain:6},
+};
 
 /* ───────── helpers ───────── */
 function $(s,el=document){return el.querySelector(s)}
@@ -578,6 +709,7 @@ async function showApp(){
       clones_14d:true,
       ...(siteContent.cct_metrics||{}),
     };
+    siteContent.theme={...THEME_DEFAULTS,...(siteContent.theme||{})};
     content=siteContent;
     renderAll();
     $('#loading').style.display='none';
@@ -880,22 +1012,64 @@ $('#add-learning').addEventListener('click',()=>{if(editorLocale === 'de'){conte
 
 /* ───────── THEME ───────── */
 function renderTheme(){
-  $('#theme-bg').value=content.theme.bg;
-  $('#theme-accent').value=content.theme.accent;
-  $('#theme-ink').value=content.theme.ink;
-  $('#theme-particles').value=content.theme.particles;
-  $('#particle-val').textContent=content.theme.particles;
-  updateSwatch();
+  content.theme={...THEME_DEFAULTS,...(content.theme||{})};
+  const t=content.theme;
+  const fields={
+    'theme-bg':t.bg,'theme-surface':t.surface,'theme-accent':t.accent,
+    'theme-accent-alt':t.accent_alt,'theme-ink':t.ink,
+    'theme-background-style':t.background_style,'theme-decoration':t.decoration,
+    'theme-decoration-intensity':t.decoration_intensity,'theme-particles':t.particles,
+    'theme-button-style':t.button_style,'theme-button-animation':t.button_animation,
+    'theme-gradient-angle':t.gradient_angle,'theme-radius':t.radius,
+    'theme-content-width':t.content_width,'theme-motion':t.motion,'theme-grain':t.grain,
+  };
+  Object.entries(fields).forEach(([id,value])=>{$('#'+id).value=value});
+  updateThemePreview();
 }
-function updateSwatch(){
-  const bg=content.theme.bg,acc=content.theme.accent,ink=content.theme.ink;
-  $('#theme-swatch').style.background=`linear-gradient(135deg,${bg},${acc})`;
-  $('#m-bg').textContent=bg;$('#m-acc').textContent=acc;$('#m-ink').textContent=ink;
+function updateThemePreview(){
+  const t=content.theme;
+  const stage=$('#theme-stage');
+  stage.style.setProperty('--pv-bg',t.bg);
+  stage.style.setProperty('--pv-surface',t.surface);
+  stage.style.setProperty('--pv-acc',t.accent);
+  stage.style.setProperty('--pv-alt',t.accent_alt);
+  stage.style.setProperty('--pv-ink',t.ink);
+  stage.style.setProperty('--pv-angle',t.gradient_angle+'deg');
+  stage.style.setProperty('--pv-radius',t.radius+'px');
+  stage.style.setProperty('--pv-intensity',t.decoration_intensity/100);
+  stage.dataset.background=t.background_style;
+  stage.dataset.decoration=t.decoration;
+  stage.dataset.button=t.button_style;
+  stage.dataset.animation=t.motion==='none'?'none':t.button_animation;
+  $('#theme-preview-label').textContent=`${t.background_style} / ${t.decoration}`;
+  $('#m-bg').textContent=t.bg;$('#m-surface').textContent=t.surface;
+  $('#m-acc').textContent=t.accent;$('#m-ink').textContent=t.ink;
+  ['bg','surface','accent','accent-alt','ink'].forEach(key=>{
+    $('#theme-'+key+'-value').textContent=$('#theme-'+key).value;
+  });
+  $('#decoration-intensity-val').textContent=t.decoration_intensity+'%';
+  $('#particle-val').textContent=t.particles;
+  $('#grain-val').textContent=t.grain+'%';
+  $('#gradient-angle-val').textContent=t.gradient_angle+'°';
+  $('#radius-val').textContent=t.radius+'px';
+  $('#content-width-val').textContent=t.content_width+'px';
+  $('#particle-field').hidden=t.decoration!=='particles';
 }
-['theme-bg','theme-accent','theme-ink'].forEach(id=>$('#'+id).addEventListener('input',()=>{
-  content.theme[id.replace('theme-','')]=$('#'+id).value;dirty=true;updateSwatch();
+const THEME_FIELDS={
+  'theme-bg':'bg','theme-surface':'surface','theme-accent':'accent','theme-accent-alt':'accent_alt','theme-ink':'ink',
+  'theme-background-style':'background_style','theme-decoration':'decoration','theme-decoration-intensity':'decoration_intensity',
+  'theme-particles':'particles','theme-button-style':'button_style','theme-button-animation':'button_animation',
+  'theme-gradient-angle':'gradient_angle','theme-radius':'radius','theme-content-width':'content_width',
+  'theme-motion':'motion','theme-grain':'grain',
+};
+Object.entries(THEME_FIELDS).forEach(([id,key])=>$('#'+id).addEventListener('input',e=>{
+  content.theme[key]=e.target.type==='range'?+e.target.value:e.target.value;
+  dirty=true;updateThemePreview();
 }));
-$('#theme-particles').addEventListener('input',e=>{content.theme.particles=+e.target.value;$('#particle-val').textContent=e.target.value;dirty=true});
+$$('[data-theme-preset]').forEach(button=>button.addEventListener('click',()=>{
+  content.theme={...THEME_PRESETS[button.dataset.themePreset]};
+  dirty=true;renderTheme();
+}));
 
 /* ───────── render all + save ───────── */
 /* ───────── private feedback ───────── */
@@ -907,14 +1081,21 @@ async function loadFeedback(){
     $('#fb-negative').textContent = d.negative || 0;
     const ratio = Number(d.positive_ratio);
     $('#fb-ratio').textContent = Number.isFinite(ratio) ? ratio.toFixed(1)+'%' : '0%';
+    const sourceLabels={
+      linkedin:'LinkedIn',github:'GitHub profile',bootdev:'Boot.dev',
+      recruiting:'Recruiting / application',search:'Search engine',
+      recommendation:'Recommendation',other:'Other'
+    };
     $('#fb-recent').innerHTML = (d.recent||[]).map(item=>{
       const rating = item.rating === 'positive' ? 'positive' : 'negative';
       const label = rating === 'positive' ? 'positive' : 'negative';
+      const sourceLabel = sourceLabels[item.source] || 'not specified';
+      const source = `<span class="fb-source">source · ${esc(sourceLabel)}</span>`;
       const comment = item.comment
         ? esc(item.comment)
         : '<span class="fb-empty">no comment</span>';
       return `<article class="fb-row">
-        <div class="fb-meta"><span class="fb-rating ${rating}">${label}</span><time>${esc(item.created_at||'')}</time></div>
+        <div class="fb-meta"><span class="fb-rating ${rating}">${label}</span>${source}<time>${esc(item.created_at||'')}</time></div>
         <div class="fb-comment">${comment}</div>
       </article>`;
     }).join('') || '<div class="an-row"><span class="k" style="color:var(--ink-mute)">no feedback yet</span></div>';

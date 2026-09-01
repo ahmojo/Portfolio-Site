@@ -92,9 +92,9 @@ def test_changed_locale_scripts_use_current_cache_versions():
     index = (ROOT / "index.html").read_text(encoding="utf-8")
     page = (ROOT / "p" / "page.html").read_text(encoding="utf-8")
 
-    assert 'locale.js?v=20260817-project-pages' in index
-    assert 'locale-controller.js?v=20260817-project-pages' in index
-    assert 'locale.js?v=20260817-project-pages' in page
+    assert 'locale.js?v=20260828-feedback-source' in index
+    assert 'locale-controller.js?v=20260828-navbar-feedback' in index
+    assert 'locale.js?v=20260828-feedback-source' in page
     assert "20260813-project-copy" not in index
     assert "20260813-project-copy" not in page
 

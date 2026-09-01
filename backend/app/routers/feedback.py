@@ -143,7 +143,7 @@ def submit_feedback(payload: FeedbackIn, request: Request):
         raise HTTPException(status_code=422, detail="comment_too_long")
 
     try:
-        feedback_storage.record_feedback(payload.rating, comment)
+        feedback_storage.record_feedback(payload.rating, comment, payload.source)
     except sqlite3.Error:
         log.exception("feedback storage failed")
         raise HTTPException(status_code=503, detail="feedback_unavailable")

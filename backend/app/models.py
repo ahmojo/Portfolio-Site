@@ -58,6 +58,10 @@ class NowIn(BaseModel):
 class FeedbackIn(BaseModel):
     rating: Literal["positive", "negative"]
     comment: str = Field("", max_length=1000, strip_whitespace=True)
+    source: Literal[
+        "", "linkedin", "github", "bootdev", "recruiting", "search",
+        "recommendation", "other"
+    ] = ""
     # Honeypot field. It is never stored and is intentionally not shown.
     website: str = Field("", max_length=120, strip_whitespace=True)
 
@@ -69,6 +73,10 @@ class FeedbackSubmitOut(BaseModel):
 class FeedbackRecentOut(BaseModel):
     rating: Literal["positive", "negative"]
     comment: str = ""
+    source: Literal[
+        "", "linkedin", "github", "bootdev", "recruiting", "search",
+        "recommendation", "other"
+    ] = ""
     created_at: str
 
 
@@ -194,10 +202,22 @@ class LearnItem(BaseModel):
     title: Optional[str] = None
 
 class ThemeContent(BaseModel):
-    bg: str = "#161a28"
-    accent: str = "#6de6a2"
-    ink: str = "#e6edf8"
-    particles: int = 72
+    bg: str = Field("#161a28", pattern=r"^#[0-9a-fA-F]{6}$")
+    surface: str = Field("#232840", pattern=r"^#[0-9a-fA-F]{6}$")
+    accent: str = Field("#6de6a2", pattern=r"^#[0-9a-fA-F]{6}$")
+    accent_alt: str = Field("#7db2ee", pattern=r"^#[0-9a-fA-F]{6}$")
+    ink: str = Field("#e6edf8", pattern=r"^#[0-9a-fA-F]{6}$")
+    background_style: Literal["solid", "ambient", "mesh", "grid", "paper"] = "ambient"
+    decoration: Literal["particles", "rails", "grid", "brackets", "aurora", "none"] = "particles"
+    decoration_intensity: int = Field(58, ge=0, le=100)
+    particles: int = Field(72, ge=0, le=300)
+    button_style: Literal["gradient", "glass", "solid", "outline", "minimal"] = "gradient"
+    button_animation: Literal["shine", "lift", "glow", "underline", "none"] = "shine"
+    gradient_angle: int = Field(120, ge=0, le=360)
+    radius: int = Field(8, ge=0, le=24)
+    content_width: int = Field(820, ge=680, le=1120)
+    motion: Literal["full", "subtle", "none"] = "full"
+    grain: int = Field(10, ge=0, le=40)
 
 
 class CctMetricsContent(BaseModel):

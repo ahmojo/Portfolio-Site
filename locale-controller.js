@@ -4,11 +4,11 @@
   if(!localeApi) return;
 
   const STATIC_COPY = [
-    {selector:'.nav-links .nav-link:nth-child(1)', de:'über mich', en:'about'},
-    {selector:'.nav-links .nav-link:nth-child(2)', de:'skills', en:'skills'},
-    {selector:'.nav-links .nav-link:nth-child(3)', de:'projekte', en:'projects'},
-    {selector:'.nav-links .nav-link:nth-child(4)', de:'open source', en:'open source'},
-    {selector:'.nav-links .nav-link:nth-child(5)', de:'lernen', en:'learning'},
+    {selector:'.nav-links .nav-link:nth-child(1) > span:last-child', de:'über mich', en:'about'},
+    {selector:'.nav-links .nav-link:nth-child(2) > span:last-child', de:'skills', en:'skills'},
+    {selector:'.nav-links .nav-link:nth-child(3) > span:last-child', de:'projekte', en:'projects'},
+    {selector:'.nav-links .nav-link:nth-child(4) > span:last-child', de:'open source', en:'open source'},
+    {selector:'.nav-links .nav-link:nth-child(5) > span:last-child', de:'lernen', en:'learning'},
     {selector:'.nav-mob > a:nth-child(1)', de:'über mich', en:'about'},
     {selector:'.nav-mob > a:nth-child(2)', de:'skills', en:'skills'},
     {selector:'.nav-mob > a:nth-child(3)', de:'projekte', en:'projects'},
@@ -66,6 +66,15 @@
     {selector:'#feedback-content .feedback-kicker', de:'kurzes feedback', en:'quick feedback'},
     {selector:'#feedback-title', de:'Wie wirkt diese Portfolio-Seite auf dich?', en:'What do you think of this portfolio?'},
     {selector:'#feedback-content .feedback-intro', de:'Dein Eindruck?', en:'Your impression?'},
+    {selector:'#feedback-source-label', html:true, de:'Wo hast du dieses Portfolio entdeckt? <span>(optional)</span>', en:'Where did you discover this portfolio? <span>(optional)</span>'},
+    {selector:'#feedback-source option[value=""]', de:'Bitte auswählen', en:'Select an option'},
+    {selector:'#feedback-source option[value="linkedin"]', de:'LinkedIn', en:'LinkedIn'},
+    {selector:'#feedback-source option[value="github"]', de:'GitHub-Profil', en:'GitHub profile'},
+    {selector:'#feedback-source option[value="bootdev"]', de:'Boot.dev', en:'Boot.dev'},
+    {selector:'#feedback-source option[value="recruiting"]', de:'Recruiting / Bewerbung', en:'Recruiting / job application'},
+    {selector:'#feedback-source option[value="search"]', de:'Suchmaschine', en:'Search engine'},
+    {selector:'#feedback-source option[value="recommendation"]', de:'Empfehlung', en:'Recommendation'},
+    {selector:'#feedback-source option[value="other"]', de:'Sonstiges', en:'Other'},
     {selector:'#feedback-comment-label', html:true, de:'Was könnte ich verbessern? <span>(optional)</span>', en:'What could I improve? <span>(optional)</span>'},
     {selector:'#feedback-comment', attr:'placeholder', de:'Ein Satz genügt.', en:'One sentence is enough.'},
     {selector:'.feedback-hint', de:"Maximal 1'000 Zeichen.", en:'Maximum 1,000 characters.'},
@@ -98,10 +107,14 @@
     document.querySelector('meta[property="og:description"]')?.setAttribute('content', description);
     document.querySelector('meta[name="twitter:description"]')?.setAttribute('content', description);
 
+    document.querySelector('.locale-switcher')?.setAttribute('aria-label', copy.nav.language);
     document.querySelectorAll('.locale-switch').forEach(button => {
-      button.textContent = locale === 'de' ? 'EN' : 'DE';
-      button.setAttribute('aria-label', copy.nav.switchTo);
-      button.setAttribute('title', copy.nav.switchTo);
+      const active = button.dataset.locale === locale;
+      const label = button.dataset.locale === 'de' ? copy.nav.useGerman : copy.nav.useEnglish;
+      button.classList.toggle('active', active);
+      button.setAttribute('aria-pressed', String(active));
+      button.setAttribute('aria-label', label);
+      button.setAttribute('title', label);
     });
     document.querySelector('.nav-logo')?.setAttribute('aria-label', copy.nav.home);
     document.querySelector('#nav-ham')?.setAttribute('aria-label', copy.nav.menu);
@@ -130,7 +143,8 @@
 
   document.querySelectorAll('.locale-switch').forEach(button => {
     button.addEventListener('click', () => {
-      window.__applyPortfolioLocale(locale === 'de' ? 'en' : 'de');
+      const next = button.dataset.locale;
+      if(next === 'de' || next === 'en') window.__applyPortfolioLocale(next);
       document.getElementById('nav-ham')?.classList.remove('open');
       document.getElementById('nav-mob')?.classList.remove('open');
     });

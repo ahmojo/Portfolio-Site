@@ -361,7 +361,7 @@ body[data-decoration="grid"] .site-decoration::after{right:0}
   body[data-decoration="rails"] .site-decoration::before,body[data-decoration="rails"] .site-decoration::after,
   body[data-decoration="grid"] .site-decoration::before,body[data-decoration="grid"] .site-decoration::after{opacity:.45}
 }
-.proj,.gh-panel,.ops-strip,.feedback-card,.cert-card,.project-tile{border-radius:var(--radius)}
+.gh-panel,.ops-strip,.feedback-card,.cert-card,.project-tile{border-radius:var(--radius)}
 .hero-meta{
   font-family:var(--mono);font-size:12px;
   color:var(--ink-mute);margin-bottom:22px;
@@ -537,6 +537,7 @@ body[data-decoration="grid"] .site-decoration::after{right:0}
   gap:20px;align-items:start;
   padding:22px 0;
   border-top:1px solid var(--line);
+  border-radius:0;
   position:relative;
   transition:padding-left var(--ts), background var(--ts);
 }
@@ -619,7 +620,7 @@ body[data-decoration="grid"] .site-decoration::after{right:0}
   padding:26px 22px 28px;
   background:rgba(var(--surface-rgb),.2);
   border:1px solid var(--line-2);
-  border-radius:8px;
+  border-radius:var(--radius);
   margin:0 -10px;
   box-shadow:none;
   transition:border-color var(--t),background var(--t);

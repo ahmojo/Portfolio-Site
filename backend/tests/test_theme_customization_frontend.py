@@ -128,6 +128,17 @@ def test_featured_project_has_no_composited_highlight_layer():
     assert "rgba(var(--acc-rgb)" not in featured.group("rule")
 
 
+def test_standard_project_separators_cannot_inherit_card_rounding():
+    html = (ROOT / "index.html").read_text(encoding="utf-8")
+
+    project = re.search(r"\.proj\{(?P<rule>[^}]+)\}", html)
+    featured = re.search(r"\.proj\.feat\{(?P<rule>[^}]+)\}", html)
+    assert project and featured
+    assert "border-radius:0" in project.group("rule")
+    assert "border-radius:var(--radius)" in featured.group("rule")
+    assert ".proj,.gh-panel" not in html
+
+
 def test_footer_work_status_is_flat_and_has_no_live_light():
     html = (ROOT / "index.html").read_text(encoding="utf-8")
 

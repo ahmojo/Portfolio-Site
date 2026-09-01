@@ -9,6 +9,26 @@ import pytest
 ROOT = Path(__file__).parents[2]
 
 
+def _assert_only_crisp_inset_shadows(rule: str) -> None:
+    match = re.search(r"box-shadow:(?P<value>[^;]+)", rule)
+    assert match, "missing box-shadow declaration"
+    layers = []
+    start = 0
+    depth = 0
+    value = match.group("value")
+    for index, char in enumerate(value):
+        if char == "(":
+            depth += 1
+        elif char == ")":
+            depth -= 1
+        elif char == "," and depth == 0:
+            layers.append(value[start:index].strip())
+            start = index + 1
+    layers.append(value[start:].strip())
+    assert layers
+    assert all(layer.startswith("inset ") for layer in layers), layers
+
+
 def test_admin_theme_studio_exposes_complete_customization_controls():
     admin = (ROOT / "admin" / "admin.html").read_text(encoding="utf-8")
 
@@ -92,8 +112,13 @@ def test_background_modes_do_not_reintroduce_large_radial_glows():
     admin_html = (ROOT / "admin" / "admin.html").read_text(encoding="utf-8")
 
     for mode in ("ambient", "mesh"):
+        public_selector = (
+            f'body[data-background="{mode}"]'
+            if mode == "ambient"
+            else f'body[data-background="{mode}"] #hero'
+        )
         for selector, html in (
-            (f'body[data-background="{mode}"] #hero', public_html),
+            (public_selector, public_html),
             (f'.theme-stage[data-background="{mode}"]', admin_html),
         ):
             match = re.search(
@@ -104,22 +129,22 @@ def test_background_modes_do_not_reintroduce_large_radial_glows():
             assert "radial-gradient" not in match.group("rule")
 
 
-def test_public_background_effects_are_bounded_to_the_hero():
+def test_patterned_background_effects_are_bounded_to_the_hero():
     html = (ROOT / "index.html").read_text(encoding="utf-8")
 
-    assert 'body[data-background="ambient"] #hero{' in html
+    assert 'body[data-background="ambient"]{' in html
     assert 'body[data-background="mesh"] #hero{' in html
     assert "body::before" not in html
     assert "#hero::after{content:'';position:absolute" in html
     assert "position:fixed;inset:0;z-index:0;pointer-events:none;opacity:var(--grain-opacity)" not in html
 
 
-def test_ambient_background_fades_out_before_the_hero_boundary():
+def test_ambient_background_is_a_uniform_opaque_tint_without_banding():
     public_html = (ROOT / "index.html").read_text(encoding="utf-8")
     admin_html = (ROOT / "admin" / "admin.html").read_text(encoding="utf-8")
 
     public_rule = re.search(
-        re.escape('body[data-background="ambient"] #hero') + r'\{(?P<rule>[^}]+)\}',
+        re.escape('body[data-background="ambient"]') + r'\{(?P<rule>[^}]+)\}',
         public_html,
     )
     admin_rule = re.search(
@@ -127,10 +152,15 @@ def test_ambient_background_fades_out_before_the_hero_boundary():
         admin_html,
     )
     assert public_rule and admin_rule
-    for rule in (public_rule.group("rule"), admin_rule.group("rule")):
-        assert "linear-gradient(180deg" in rule
-        assert "46%" in rule
-        assert "120deg" not in rule
+    for rule, background_var, accent_var in (
+        (public_rule.group("rule"), "var(--bg)", "var(--acc)"),
+        (admin_rule.group("rule"), "var(--pv-bg)", "var(--pv-acc)"),
+    ):
+        assert "gradient" not in rule
+        assert "transparent" not in rule
+        assert "color-mix" in rule
+        assert f"{background_var} 98%" in rule
+        assert f"{accent_var} 2%" in rule
 
 
 def test_public_accent_feedback_has_no_blurred_colored_shadows():
@@ -157,10 +187,51 @@ def test_featured_project_keeps_safe_illumination_without_composited_highlight_l
     assert "filter:brightness" not in html
 
     featured = re.search(r"\.proj\.feat\{(?P<rule>[^}]+)\}", html)
-    assert featured
-    assert "linear-gradient(180deg,rgba(var(--acc-rgb),.055)" in featured.group("rule")
+    featured_hover = re.search(r"\.proj\.feat:hover\{(?P<rule>[^}]+)\}", html)
+    assert featured and featured_hover
+    assert "gradient" not in featured.group("rule")
+    assert "gradient" not in featured_hover.group("rule")
+    assert "background-color:color-mix" in featured.group("rule")
     assert "border:1px solid rgba(var(--acc-rgb),.2)" in featured.group("rule")
-    assert "box-shadow:0 28px 60px -48px rgba(0,0,0,.92)" in featured.group("rule")
+    assert "box-shadow:inset 3px 0 0" in featured.group("rule")
+    _assert_only_crisp_inset_shadows(featured.group("rule"))
+    _assert_only_crisp_inset_shadows(featured_hover.group("rule"))
+    assert "padding:26px 22px 28px" in featured.group("rule")
+    assert "padding-left:22px" in featured_hover.group("rule")
+
+
+def test_project_and_merge_card_highlights_use_flat_surfaces_without_blur_layers():
+    html = (ROOT / "index.html").read_text(encoding="utf-8")
+
+    project_hover = re.search(r"\.proj:hover\{(?P<rule>[^}]+)\}", html)
+    merge_card = re.search(r"\.oss-card\{(?P<rule>[^}]+)\}", html)
+    merge_hover = re.search(
+        r"\.oss-card:hover,\s*\.oss-card:focus-visible\{(?P<rule>[^}]+)\}",
+        html,
+    )
+    assert project_hover and merge_card and merge_hover
+    assert "gradient" not in project_hover.group("rule")
+    assert "gradient" not in merge_card.group("rule")
+    assert "transform" not in merge_card.group("rule")
+    assert "translateY" not in merge_hover.group("rule")
+    assert "box-shadow:inset 3px 0 0" in merge_hover.group("rule")
+    _assert_only_crisp_inset_shadows(merge_hover.group("rule"))
+    assert "background-color:var(--bg)" in project_hover.group("rule")
+    assert ".reveal .oss-card[data-stagger]{transition:" in html
+    assert "background-color var(--t),border-color var(--t),box-shadow var(--t)" in html
+
+
+def test_admin_inline_preview_uses_the_same_opaque_featured_highlight_path():
+    admin = (ROOT / "admin" / "admin.html").read_text(encoding="utf-8")
+
+    card = re.search(r"\.theme-preview-card\{(?P<rule>[^}]+)\}", admin)
+    assert card
+    rule = card.group("rule")
+    assert "background:var(--pv-bg)" in rule
+    assert "var(--pv-bg) 94%" in rule
+    assert "var(--pv-acc) 6%" in rule
+    assert "gradient" not in rule
+    _assert_only_crisp_inset_shadows(rule)
 
 
 def test_standard_project_separators_cannot_inherit_card_rounding():

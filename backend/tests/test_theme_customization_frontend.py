@@ -54,6 +54,18 @@ def test_public_site_applies_palette_layout_motion_buttons_and_decoration():
     assert 'body[data-button-animation="underline"]' in html
 
 
+def test_background_modes_do_not_reintroduce_large_radial_glows():
+    html = (ROOT / "index.html").read_text(encoding="utf-8")
+
+    for mode in ("ambient", "mesh"):
+        match = re.search(
+            rf'body\[data-background="{mode}"\]\{{(?P<rule>[^}}]+)\}}',
+            html,
+        )
+        assert match, f"missing CSS rule for {mode!r} background"
+        assert "radial-gradient" not in match.group("rule")
+
+
 def test_old_terminal_exit_footer_is_removed():
     html = (ROOT / "index.html").read_text(encoding="utf-8")
 

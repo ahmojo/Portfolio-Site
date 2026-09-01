@@ -89,14 +89,27 @@ def test_background_modes_do_not_reintroduce_large_radial_glows():
     public_html = (ROOT / "index.html").read_text(encoding="utf-8")
     admin_html = (ROOT / "admin" / "admin.html").read_text(encoding="utf-8")
 
-    for selector, html in (("body", public_html), (r"\.theme-stage", admin_html)):
-        for mode in ("ambient", "mesh"):
+    for mode in ("ambient", "mesh"):
+        for selector, html in (
+            (f'body[data-background="{mode}"] #hero', public_html),
+            (f'.theme-stage[data-background="{mode}"]', admin_html),
+        ):
             match = re.search(
-                rf'{selector}\[data-background="{mode}"\]\{{(?P<rule>[^}}]+)\}}',
+                re.escape(selector) + r'\{(?P<rule>[^}]+)\}',
                 html,
             )
             assert match, f"missing CSS rule for {mode!r} background"
             assert "radial-gradient" not in match.group("rule")
+
+
+def test_public_background_effects_are_bounded_to_the_hero():
+    html = (ROOT / "index.html").read_text(encoding="utf-8")
+
+    assert 'body[data-background="ambient"] #hero{' in html
+    assert 'body[data-background="mesh"] #hero{' in html
+    assert "body::before" not in html
+    assert "#hero::after{content:'';position:absolute" in html
+    assert "position:fixed;inset:0;z-index:0;pointer-events:none;opacity:var(--grain-opacity)" not in html
 
 
 def test_public_accent_feedback_has_no_blurred_colored_shadows():
@@ -115,7 +128,7 @@ def test_public_accent_feedback_has_no_blurred_colored_shadows():
     assert "@keyframes themeRing" in admin_html
 
 
-def test_featured_project_has_no_composited_highlight_layer():
+def test_featured_project_keeps_safe_illumination_without_composited_highlight_layer():
     html = (ROOT / "index.html").read_text(encoding="utf-8")
 
     assert ".proj.feat::before{display:none}" in html
@@ -124,8 +137,9 @@ def test_featured_project_has_no_composited_highlight_layer():
 
     featured = re.search(r"\.proj\.feat\{(?P<rule>[^}]+)\}", html)
     assert featured
-    assert "box-shadow:none" in featured.group("rule")
-    assert "rgba(var(--acc-rgb)" not in featured.group("rule")
+    assert "linear-gradient(180deg,rgba(var(--acc-rgb),.055)" in featured.group("rule")
+    assert "border:1px solid rgba(var(--acc-rgb),.2)" in featured.group("rule")
+    assert "box-shadow:0 28px 60px -48px rgba(0,0,0,.92)" in featured.group("rule")
 
 
 def test_standard_project_separators_cannot_inherit_card_rounding():
@@ -139,7 +153,7 @@ def test_standard_project_separators_cannot_inherit_card_rounding():
     assert ".proj,.gh-panel" not in html
 
 
-def test_footer_work_status_is_flat_and_has_no_live_light():
+def test_footer_work_status_is_framed_and_has_no_live_light():
     html = (ROOT / "index.html").read_text(encoding="utf-8")
 
     assert 'class="now-bar" id="now-bar" role="status" aria-live="polite"' in html
@@ -150,9 +164,10 @@ def test_footer_work_status_is_flat_and_has_no_live_light():
 
     bar = re.search(r"\.now-bar\{(?P<rule>[^}]+)\}", html)
     assert bar
-    assert "border" not in bar.group("rule")
-    assert "background" not in bar.group("rule")
-    assert "box-shadow" not in bar.group("rule")
+    assert "border:1px solid var(--line-2)" in bar.group("rule")
+    assert "background:rgba(var(--surface-rgb),.12)" in bar.group("rule")
+    assert "box-shadow:none" in bar.group("rule")
+    assert ".now-bar::before" in html
 
 
 def test_preview_opens_the_unsaved_draft_without_publishing():

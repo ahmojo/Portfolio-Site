@@ -91,6 +91,32 @@ def test_background_modes_do_not_reintroduce_large_radial_glows():
             assert "radial-gradient" not in match.group("rule")
 
 
+def test_public_accent_feedback_has_no_blurred_colored_shadows():
+    public_html = (ROOT / "index.html").read_text(encoding="utf-8")
+    admin_html = (ROOT / "admin" / "admin.html").read_text(encoding="utf-8")
+
+    accent_shadows = [
+        shadow
+        for shadow in re.findall(r"box-shadow:([^;}]+)", public_html)
+        if "acc-rgb" in shadow or "var(--acc)" in shadow
+    ]
+    assert all("inset" in shadow for shadow in accent_shadows)
+    assert "filter:saturate" not in public_html
+    assert "@keyframes ping" not in public_html
+    assert "@keyframes themeGlow" not in admin_html
+    assert "@keyframes themeRing" in admin_html
+
+
+def test_footer_work_status_is_flat_and_has_no_live_light():
+    html = (ROOT / "index.html").read_text(encoding="utf-8")
+
+    assert 'class="now-bar" id="now-bar" role="status" aria-live="polite"' in html
+    assert 'class="now-work"' in html
+    assert "live-dot" not in html
+    assert "now-pill" not in html
+    assert ".now-label::before" in html
+
+
 def test_preview_opens_the_unsaved_draft_without_publishing():
     admin = (ROOT / "admin" / "admin.html").read_text(encoding="utf-8")
     public = (ROOT / "index.html").read_text(encoding="utf-8")

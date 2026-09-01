@@ -66,6 +66,7 @@
     {selector:'#feedback-content .feedback-kicker', de:'kurzes feedback', en:'quick feedback'},
     {selector:'#feedback-title', de:'Wie wirkt diese Portfolio-Seite auf dich?', en:'What do you think of this portfolio?'},
     {selector:'#feedback-content .feedback-intro', de:'Dein Eindruck?', en:'Your impression?'},
+    {selector:'.now-label', de:'aktuell in arbeit', en:'currently building'},
     {selector:'#feedback-source-label', html:true, de:'Wo hast du dieses Portfolio entdeckt? <span>(optional)</span>', en:'Where did you discover this portfolio? <span>(optional)</span>'},
     {selector:'#feedback-source option[value=""]', de:'Bitte auswählen', en:'Select an option'},
     {selector:'#feedback-source option[value="linkedin"]', de:'LinkedIn', en:'LinkedIn'},
